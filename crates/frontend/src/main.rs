@@ -3,7 +3,7 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 use gloo_console::log;
 
-use types::user::UserInfo;
+use types::user::ResponseUser;
 
 #[function_component(App)]
 fn app() -> Html {
@@ -26,7 +26,7 @@ fn app() -> Html {
                 Some(port) => {
                     let response = reqwest::get(format!("http://localhost:{}/user", port)).await;
                     match response {
-                        Ok(data) => match data.json::<UserInfo>().await {
+                        Ok(data) => match data.json::<ResponseUser>().await {
                             Ok(user) => Ok(user),
                             Err(_) => Err("Backend body Error".to_owned()),
                         },
@@ -49,7 +49,7 @@ fn app() -> Html {
     let state_server = use_async(async move {
         let response = reqwest::get("http://localhost:3001/user").await;
         match response {
-            Ok(data) => match data.json::<UserInfo>().await {
+            Ok(data) => match data.json::<ResponseUser>().await {
                 Ok(user) => Ok(user),
                 Err(_) => Err("Body Error".to_string()),
             },
@@ -111,7 +111,7 @@ fn app() -> Html {
             {
                 if let Some(response) = &state.data {
                     html! {
-                        <p>{ "From backend: " }<b>{ &response.name }</b></p>
+                        <p>{ "From backend: " }<b>{ &response.username }</b></p>
                     }
                 } else {
                     html! {}
@@ -120,7 +120,7 @@ fn app() -> Html {
             {
                 if let Some(response) = &state_server.data {
                     html! {
-                        <p>{ "From server: " }<b>{ &response.name }</b></p>
+                        <p>{ "From server: " }<b>{ &response.username }</b></p>
                     }
                 } else {
                     html! {}

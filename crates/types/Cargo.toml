@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 serde = "1"
+sqlx = "0.7.3"

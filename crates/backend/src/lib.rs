@@ -9,7 +9,7 @@ use axum::{
 };
 use tower_http::cors::{Any, CorsLayer};
 
-use types::user::UserInfo;
+use types::user::ResponseUser;
 
 pub async fn app(port: u16) {
     let app = Router::new()
@@ -37,9 +37,10 @@ async fn handler() -> impl IntoResponse {
 }
 
 async fn user_handler() -> impl IntoResponse {
-    let user = UserInfo {
-        id: 1,
-        name: "Backend user".to_owned(),
+    let user = ResponseUser {
+        uuid: "1".to_owned(),
+        email: "test@test.com".to_owned(),
+        username: "Backend user".to_owned()
     };
 
     Json(user)
