@@ -1,8 +1,9 @@
 use tauri_sys::tauri::invoke;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
+use gloo_console::log;
 
-use types::UserInfo;
+use types::user::UserInfo;
 
 #[function_component(App)]
 fn app() -> Html {
@@ -68,7 +69,11 @@ fn app() -> Html {
     // Manually connect to websocket with custom options.
     let ws = {
         let history = history.clone();
-        let port = port.data.clone().unwrap_or_default();
+        let mut port = port.data.clone().unwrap_or_default();
+        if cfg!(debug_assertions) && port == "" {
+            port = "3001".to_string();
+        }
+        log!("{}", port.clone());
         use_websocket_with_options(
             format!("ws://localhost:{}/ws", port),
             UseWebSocketOptions {

@@ -9,7 +9,7 @@ use axum::{
 };
 use tower_http::cors::{Any, CorsLayer};
 
-use types::UserInfo;
+use types::user::UserInfo;
 
 pub async fn app(port: u16) {
     let app = Router::new()

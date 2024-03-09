@@ -9,7 +9,7 @@ use axum::{
 };
 use tower_http::cors::{Any, CorsLayer};
 
-use types::UserInfo;
+use types::user::UserInfo;
 
 #[tokio::main]
 async fn main() {
