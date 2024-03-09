@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{env, net::SocketAddr, path::PathBuf};
 
 use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
@@ -7,6 +7,7 @@ use axum::{
     routing::get,
     Json, Router,
 };
+use dotenv::dotenv;
 use tower_http::cors::{Any, CorsLayer};
 use types::user::ResponseUser;
 
@@ -14,6 +15,14 @@ mod pool;
 
 #[tokio::main]
 async fn main() {
+    let dotenv_path: PathBuf = dotenv().expect("failed to find .env file");
+    println!("cargo:rerun-if-changed={}", dotenv_path.display());
+
+    let env_path: PathBuf = env::current_dir().and_then(|a: PathBuf| Ok(a.join("/.env"))).unwrap();
+    let _ = dotenv::from_path(env_path);
+
+    let _ = pool::create_pool().await;
+
     let app = Router::new()
         .route("/ws", get(ws_handler))
         .route("/user", get(user_handler))
