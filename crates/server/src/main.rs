@@ -8,8 +8,9 @@ use axum::{
     Json, Router,
 };
 use tower_http::cors::{Any, CorsLayer};
-
 use types::user::ResponseUser;
+
+mod pool;
 
 #[tokio::main]
 async fn main() {
