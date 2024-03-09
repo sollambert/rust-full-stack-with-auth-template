@@ -17,7 +17,7 @@ wasm-bindgen-futures = "0.4"
 wasm-logger = "0.2.0"
 js-sys = "0.3"
 web-sys = "0.3"
+gloo-console = "0.3.0"
 tauri-sys = { git = "https://github.com/JonasKruckenberg/tauri-sys", features = ["all"] }
 
 types = { path = "../types" }
-gloo-console = "0.3.0"

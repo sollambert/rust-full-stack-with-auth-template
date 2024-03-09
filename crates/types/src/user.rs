@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, sqlx::FromRow)]
+#[derive(Clone, Debug, Serialize)]
+#[cfg_attr(feature = "sqlx_support", derive(sqlx::FromRow))]
 pub struct User {
     pub id: i32,
     pub uuid: String,
@@ -22,7 +23,8 @@ pub struct LoginUser {
     pub pass: String
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "sqlx_support", derive(sqlx::FromRow))]
 pub struct ResponseUser {
     pub uuid: String,
     pub username: String,
