@@ -58,8 +58,8 @@ async fn create_user(
             return (StatusCode::CREATED, Json(response_user))
         },
         Err(_) => {
-            // send 400 BAD REQUEST with empty ResponseUser
-            return (StatusCode::BAD_REQUEST, Json(response_user))
+            // send 500 SERVICE UNAVAILABLE with empty ResponseUser
+            return (StatusCode::SERVICE_UNAVAILABLE, Json(response_user))
         }
     }
 }

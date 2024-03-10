@@ -10,20 +10,20 @@ pub struct User {
     pub email: String
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CreateUser {
     pub username: String,
     pub pass: String,
     pub email: String
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct LoginUser {
     pub username: String,
     pub pass: String
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(feature = "sqlx", derive(sqlx::FromRow))]
 pub struct ResponseUser {
     pub uuid: String,

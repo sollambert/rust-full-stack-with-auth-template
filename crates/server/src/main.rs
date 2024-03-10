@@ -1,11 +1,10 @@
 use std::{net::SocketAddr, path::PathBuf};
 
 use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade}, response::IntoResponse, routing::get, Json, Router
+    extract::ws::{Message, WebSocket, WebSocketUpgrade}, response::IntoResponse, routing::get, Router
 };
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
-use types::user::ResponseUser;
 
 mod pool;
 mod strategies;
@@ -38,10 +37,10 @@ async fn main() {
         .route("/ws", get(ws_handler))
         .nest("/auth", controllers::auth_controller::routes())
         .nest("/user", controllers::users_controller::routes())
-        .route("/", get(handler))
-        .layer(
-            ServiceBuilder::new()
-            .layer(cors));
+        .route("/", get(handler));
+        // .layer(
+        //     ServiceBuilder::new()
+        //     .layer(cors));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
