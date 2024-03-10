@@ -5,6 +5,9 @@ use yew_hooks::prelude::*;
 
 use types::user::ResponseUser;
 
+mod auth;
+mod services;
+
 #[function_component(App)]
 fn app() -> Html {
     // Get backend port automatically from tauri command.
@@ -17,6 +20,12 @@ fn app() -> Html {
         },
         UseAsyncOptions::enable_auto(),
     );
+
+    let user_ctx: UseStateHandle<ResponseUser> = use_state(|| ResponseUser {
+        uuid: String::new(),
+        username: String::new(),
+        email: String::new()
+    });
 
     // Fetch data from backend.
     let state = {
@@ -102,7 +111,7 @@ fn app() -> Html {
     };
 
     html! {
-        <>
+        <ContextProvider<ResponseUser> context={(*user_ctx).clone()}>
             <p class="space-x-4 m-4">
                 <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90" {onclick}>{ "Load backend api" }</button>
                 <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90" onclick={onclickserver}>{ "Load server api" }</button>
@@ -136,7 +145,7 @@ fn app() -> Html {
                     }
                 })
             }
-        </>
+        </ContextProvider<ResponseUser>>
     }
 }
 
