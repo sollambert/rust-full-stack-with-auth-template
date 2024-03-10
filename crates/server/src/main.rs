@@ -9,6 +9,8 @@ use types::user::ResponseUser;
 
 mod pool;
 mod strategies;
+mod controllers;
+mod middleware;
 
 #[tokio::main]
 async fn main() {
@@ -34,7 +36,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/ws", get(ws_handler))
-        .route("/user", get(user_handler))
+        .nest("/auth", controllers::auth_controller::routes())
+        .nest("/user", controllers::users_controller::routes())
         .route("/", get(handler))
         .layer(
             ServiceBuilder::new()
@@ -50,16 +53,6 @@ async fn main() {
 
 async fn handler() -> impl IntoResponse {
     "Hello, from server!"
-}
-
-async fn user_handler() -> impl IntoResponse {
-    let user = ResponseUser {
-        uuid: "1".to_owned(),
-        email: "test@test.com".to_owned(),
-        username: "Backend user".to_owned()
-    };
-
-    Json(user)
 }
 
 async fn ws_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
