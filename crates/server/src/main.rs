@@ -11,6 +11,7 @@ use tower_http::cors::{Any, CorsLayer};
 use types::user::ResponseUser;
 
 mod pool;
+mod strategies;
 
 #[tokio::main]
 async fn main() {
