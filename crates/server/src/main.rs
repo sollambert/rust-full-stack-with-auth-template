@@ -1,12 +1,9 @@
 use std::{net::SocketAddr, path::PathBuf};
 
 use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
-    http::Method,
-    response::IntoResponse,
-    routing::get,
-    Json, Router,
+    extract::ws::{Message, WebSocket, WebSocketUpgrade}, response::IntoResponse, routing::get, Json, Router
 };
+use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 use types::user::ResponseUser;
 
@@ -30,22 +27,25 @@ async fn main() {
     //create pg pool
     pool::create_pool().await;
 
+
+    let cors = CorsLayer::new()
+            // .allow_methods([Method::GET, Method::POST])
+            .allow_origin(Any);
+
     let app = Router::new()
         .route("/ws", get(ws_handler))
         .route("/user", get(user_handler))
         .route("/", get(handler))
         .layer(
-            CorsLayer::new()
-                .allow_origin(Any)
-                .allow_methods(vec![Method::GET, Method::POST]),
-        );
+            ServiceBuilder::new()
+            .layer(cors));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
-    println!("listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    match axum::serve(listener, app).await {
+        Ok(_) => println!("Server listening on {}", addr),
+        Err(error) => panic!("Could not listen on port {}: {}", addr, error)
+    }
 }
 
 async fn handler() -> impl IntoResponse {
