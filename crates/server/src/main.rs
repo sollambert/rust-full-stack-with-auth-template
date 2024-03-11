@@ -19,7 +19,7 @@ async fn main() {
         match dotenv::dotenv() {
             Ok(path) => path,
             Err(error) => {
-                println!("Cannot pull .env file: {}", error);
+                println!("Cannot access .env file: {}", error);
                 PathBuf::from("")
             }
         };
