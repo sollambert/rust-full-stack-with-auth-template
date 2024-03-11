@@ -11,9 +11,6 @@ mod strategies;
 mod controllers;
 mod middleware;
 
-#[cfg(all(feature = "postgres", feature = "sqlite"))]
-compile_error!("feature \"postgres\" and feature \"sqlite\" cannot be enabled at the same time");
-
 #[tokio::main]
 async fn main() {
 

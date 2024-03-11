@@ -1,7 +1,23 @@
 use std::env;
 
+
+#[cfg(not(any(
+    all(feature = "postgres", any(feature = "sqlite")),
+    all(feature = "sqlite", any(feature = "postgres")),
+)))]
 use std::time::Duration;
+
+#[cfg(not(any(
+    all(feature = "postgres", any(feature = "sqlite")),
+    all(feature = "sqlite", any(feature = "postgres")),
+)))]
 use once_cell::sync::OnceCell;
+
+#[cfg(any(
+    all(feature = "postgres", any(feature = "sqlite")),
+    all(feature = "sqlite", any(feature = "postgres")),
+))]
+use sqlx::{any::Any, Pool};
 
 #[cfg(not(any(feature = "postgres", feature = "sqlite")))]
 use sqlx::{any::{Any, AnyPoolOptions}, Pool};
@@ -35,6 +51,14 @@ pub async fn create_pool() {
     init_pool(database_url).await;
 }
 
+#[cfg(any(
+    all(feature = "postgres", any(feature = "sqlite")),
+    all(feature = "sqlite", any(feature = "postgres")),
+))]
+async fn init_pool(_database_url: String) {
+    panic!("Cannot have multiple database features enabled!")
+}
+
 #[cfg(not(any(feature = "postgres", feature = "sqlite")))]
 async fn init_pool(database_url: String) {
     let pool = match AnyPoolOptions::new()
@@ -49,7 +73,7 @@ async fn init_pool(database_url: String) {
     POOL.set(pool).unwrap();
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
 async fn init_pool(database_url: String) {
     let pool = match PgPoolOptions::new()
         .max_connections(100)
@@ -63,7 +87,7 @@ async fn init_pool(database_url: String) {
     POOL.set(pool).unwrap();
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
 async fn init_pool(database_url: String) {
     let pool = match SqlitePoolOptions::new()
         .max_connections(100)
@@ -77,6 +101,15 @@ async fn init_pool(database_url: String) {
     POOL.set(pool).unwrap();
 }
 
+#[cfg(any(
+    all(feature = "postgres", any(feature = "sqlite")),
+    all(feature = "sqlite", any(feature = "postgres")),
+))]
+pub fn get_pool() -> Pool<Any> {
+    panic!("Cannot have multiple database features enabled!")
+}
+
+#[cfg(not(any(feature = "postgres", feature = "sqlite")))]
 pub fn get_pool() -> Pool<Any> {
     POOL.get().unwrap().to_owned()
 }
