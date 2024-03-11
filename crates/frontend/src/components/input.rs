@@ -2,6 +2,7 @@ use yew::prelude::*;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
+    pub value: String,
     #[prop_or_default]
     pub label: String,
     pub oninput: Callback<InputEvent>,
@@ -34,7 +35,8 @@ pub fn input(props: &Props) -> Html {
                     oninput={oninput}
                     type={props.input_type}
                     placeholder={props.placeholder}
-                    disabled={props.disabled}/>
+                    disabled={props.disabled}
+                    value={props.value}/>
         </>
     }
 }
