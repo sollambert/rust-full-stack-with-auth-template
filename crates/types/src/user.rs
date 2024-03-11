@@ -19,6 +19,12 @@ pub struct RegisterUser {
     pub email: String
 }
 
+impl fmt::Display for RegisterUser {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Username: {}\nPass: {}\nEmail: {}", self.username, self.pass, self.email)
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct LoginUser {
     pub username: String,

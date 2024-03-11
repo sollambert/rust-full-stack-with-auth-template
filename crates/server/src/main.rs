@@ -30,7 +30,6 @@ async fn main() {
 
 
     let cors = CorsLayer::new()
-            // .allow_methods([Method::GET, Method::POST])
             .allow_origin(Any)
             .allow_headers(Any)
             .allow_methods(Any);

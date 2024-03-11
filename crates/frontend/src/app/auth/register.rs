@@ -1,38 +1,66 @@
-use gloo_console::error;
+use gloo_console::{error, log};
 use types::user::RegisterUser;
-use yew::{function_component, html, use_state, Callback, Html};
+use web_sys::HtmlInputElement;
+use yew::{function_component, html, use_state, Callback, Html, InputEvent, SubmitEvent, TargetCast};
 use yew_hooks::use_async;
 
 use yewdux::prelude::*;
 
-use crate::{services, UserState};
+use crate::{services, app::UserState, components::{button::Button, input::Input}};
 
 #[function_component(Register)]
 pub fn register() -> Html {
     let (user_state, user_dispatch) = use_store::<UserState>();
-    let username = use_state(|| "test2");
-    let pass = use_state(|| "test2");
-    let email = use_state(|| "test2");
+    let register_user = use_state(RegisterUser::default);
 
-    let handle_register = use_async(async move {
-        let response = services::auth::register_user(
-            RegisterUser {
-                username: username.to_string(),
-                pass: pass.to_string(),
-                email: email.to_string()
-            }).await;
-        match response {
-            Ok(response_user) => {
-                // (response_user.clone());
-                user_dispatch.set(UserState {response_user: response_user.clone()});
-                Ok(response_user)
-            },
-            Err(error) => {
-                error!("No response found: {}", error.to_string());
-                Err(error)
+    let oninput_username = {
+        let register_user = register_user.clone();
+        Callback::from(move |e: InputEvent| {
+            let mut updated_user = (*register_user).clone();
+            let input: HtmlInputElement = e.target_unchecked_into();
+            updated_user.username = input.value();
+            register_user.set(updated_user);
+        })
+    };
+
+    let oninput_pass = {
+        let register_user = register_user.clone();
+        Callback::from(move |e: InputEvent| {
+            let mut updated_user = (*register_user).clone();
+            let input: HtmlInputElement = e.target_unchecked_into();
+            updated_user.pass = input.value();
+            register_user.set(updated_user);
+        })
+    };
+
+    let oninput_email = {
+        let register_user = register_user.clone();
+        Callback::from(move |e: InputEvent| {
+            let mut updated_user = (*register_user).clone();
+            let input: HtmlInputElement = e.target_unchecked_into();
+            updated_user.email = input.value();
+            register_user.set(updated_user);
+        })
+    };
+
+    let handle_register = {
+        let register_user = register_user.clone();
+        use_async(async move {
+            let response = services::auth::register_user((*register_user).clone()).await;
+            match response {
+                Ok(response_user) => {
+                    // (response_user.clone());
+                    user_dispatch.set(UserState {response_user: response_user.clone()});
+                    register_user.set(RegisterUser::default());
+                    Ok(response_user)
+                },
+                Err(error) => {
+                    error!("No response found: {}", error.to_string());
+                    Err(error)
+                }
             }
-        }
-    });
+        })
+    };
 
     let register_onclick = {
         let handle_register = handle_register.clone();
@@ -41,10 +69,29 @@ pub fn register() -> Html {
         })
     };
 
+    let register_onsubmit = {
+        let handle_register = handle_register.clone();
+        Callback::from(move |ev: SubmitEvent| {
+            ev.prevent_default();
+            handle_register.run();
+        })
+    };
+
     html! {
         <>
-            <pre>{user_state.response_user.to_owned()}</pre>
-            <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90" onclick={register_onclick}>{"Register"}</button>
+            <div class="m-4">
+                <pre>{"UserInfo: \n"}{user_state.response_user.to_string()}</pre>
+                <br/>
+                <pre>{"RegisterUser: \n"}{register_user.to_owned().to_string()}</pre>
+                <br/>
+                <form class="flex flex-col w-64 h-64 space-y-2"
+                    onsubmit={register_onsubmit}>
+                    <Input input_type="text" placeholder="Username" oninput={oninput_username}/>
+                    <Input input_type="password" placeholder="Password" oninput={oninput_pass}/>
+                    <Input input_type="email" placeholder="Email" oninput={oninput_email}/>
+                    <Button onclick={register_onclick} label="Register" />
+                </form>
+            </div>
         </>
     }
 }
