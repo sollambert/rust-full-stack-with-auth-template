@@ -1,6 +1,6 @@
 use std::env;
 use bcrypt::{DEFAULT_COST, hash_with_salt};
-use types::user::{CreateUser, User};
+use types::user::{RegisterUser, User};
 use uuid::Uuid;
 
 use crate::pool;
@@ -33,7 +33,7 @@ pub async fn get_db_user_by_username(username: String) -> Result<User, sqlx::Err
     }
 }
 
-pub async fn insert_db_user(create_user: CreateUser) -> Result<i32, sqlx::Error> {
+pub async fn insert_db_user(create_user: RegisterUser) -> Result<i32, sqlx::Error> {
     // generate new user id
     let id = Uuid::new_v4();
     println!("{}", id);

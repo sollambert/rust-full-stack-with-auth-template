@@ -31,16 +31,18 @@ async fn main() {
 
     let cors = CorsLayer::new()
             // .allow_methods([Method::GET, Method::POST])
-            .allow_origin(Any);
+            .allow_origin(Any)
+            .allow_headers(Any)
+            .allow_methods(Any);
 
     let app = Router::new()
         .route("/ws", get(ws_handler))
         .nest("/auth", controllers::auth_controller::routes())
         .nest("/user", controllers::users_controller::routes())
-        .route("/", get(handler));
-        // .layer(
-        //     ServiceBuilder::new()
-        //     .layer(cors));
+        .route("/", get(handler))
+        .layer(
+            ServiceBuilder::new()
+            .layer(cors));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();

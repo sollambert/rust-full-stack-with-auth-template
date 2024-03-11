@@ -1,16 +1,24 @@
 use tauri_sys::tauri::invoke;
 use yew::prelude::*;
+use yewdux::prelude::*;
 use yew_hooks::prelude::*;
 // use gloo_console::log;
 
-use types::user::ResponseUser;
+use types::user::UserInfo;
 
 mod app;
 mod components;
 mod hooks;
 mod services;
 
-use crate::components::user_context_provider::UserContextProvider;
+use crate::app::auth::register::Register;
+
+
+#[derive(Default, PartialEq, Store)]
+struct UserState {
+    response_user: UserInfo
+}
+
 
 #[function_component(App)]
 fn app() -> Html {
@@ -33,7 +41,7 @@ fn app() -> Html {
                 Some(port) => {
                     let response = reqwest::get(format!("http://localhost:{}/user", port)).await;
                     match response {
-                        Ok(data) => match data.json::<ResponseUser>().await {
+                        Ok(data) => match data.json::<UserInfo>().await {
                             Ok(user) => Ok(user),
                             Err(_) => Err("Backend body Error".to_owned()),
                         },
@@ -56,7 +64,7 @@ fn app() -> Html {
     let state_server = use_async(async move {
         let response = reqwest::get("http://localhost:3001/user").await;
         match response {
-            Ok(data) => match data.json::<ResponseUser>().await {
+            Ok(data) => match data.json::<UserInfo>().await {
                 Ok(user) => Ok(user),
                 Err(_) => Err("Body Error".to_string()),
             },
@@ -107,9 +115,8 @@ fn app() -> Html {
             ws.open();
         })
     };
-
     html! {
-        <UserContextProvider>
+        <>
             <p class="space-x-4 m-4">
                 <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90" {onclick}>{ "Load backend api" }</button>
                 <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90" onclick={onclickserver}>{ "Load server api" }</button>
@@ -143,7 +150,8 @@ fn app() -> Html {
                     }
                 })
             }
-        </UserContextProvider>
+            <Register />
+        </>
     }
 }
 

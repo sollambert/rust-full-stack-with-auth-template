@@ -5,7 +5,7 @@ use axum::{
 };
 use bcrypt::verify;
 use serde::Serialize;
-use types::user::{ResponseUser, LoginUser};
+use types::user::{UserInfo, LoginUser};
 
 use crate::{strategies::{users, authentication::{AuthError, generate_new_token, AuthBody}}, middleware::token_athentication};
 
@@ -22,7 +22,7 @@ pub fn routes() -> Router {
 #[derive(Serialize)]
 struct LoginResponse {
     auth: AuthBody,
-    user: ResponseUser
+    user: UserInfo
 }
 
 // example route for authentication protection, will be replaced with middleware
@@ -54,7 +54,7 @@ async fn login_user(
     // verify supplied password is validated
     if verify(payload.pass, &user.pass).unwrap() {
         // build response user
-        let response_user = ResponseUser {
+        let response_user = UserInfo {
             uuid: user.uuid,
             username: user.username,
             email: user.email

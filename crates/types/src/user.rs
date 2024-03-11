@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize)]
@@ -11,7 +13,7 @@ pub struct User {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct CreateUser {
+pub struct RegisterUser {
     pub username: String,
     pub pass: String,
     pub email: String
@@ -25,8 +27,14 @@ pub struct LoginUser {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 #[cfg_attr(feature = "sqlx", derive(sqlx::FromRow))]
-pub struct ResponseUser {
+pub struct UserInfo {
     pub uuid: String,
     pub username: String,
     pub email: String
+}
+
+impl fmt::Display for UserInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "UUID: {}\nUsername: {}\nEmail: {}", self.uuid, self.username, self.email)
+    }
 }

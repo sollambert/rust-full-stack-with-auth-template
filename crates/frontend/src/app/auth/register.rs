@@ -1,28 +1,30 @@
 use gloo_console::error;
-use types::user::CreateUser;
-use yew::prelude::*;
-use yew_hooks::prelude::*;
+use types::user::RegisterUser;
+use yew::{function_component, html, use_state, Callback, Html};
+use yew_hooks::use_async;
 
-use crate::{hooks::use_user_context::use_user_context, services};
+use yewdux::prelude::*;
+
+use crate::{services, UserState};
 
 #[function_component(Register)]
 pub fn register() -> Html {
-    let username = use_state(|| "");
-    let pass = use_state(|| "");
-    let email = use_state(|| "");
+    let (user_state, user_dispatch) = use_store::<UserState>();
+    let username = use_state(|| "test2");
+    let pass = use_state(|| "test2");
+    let email = use_state(|| "test2");
 
-    let user_cxt = use_user_context();
-
-    let register_onclick = use_async(async move {
+    let handle_register = use_async(async move {
         let response = services::auth::register_user(
-            CreateUser {
+            RegisterUser {
                 username: username.to_string(),
                 pass: pass.to_string(),
                 email: email.to_string()
             }).await;
         match response {
             Ok(response_user) => {
-                user_cxt.set_user(response_user.clone());
+                // (response_user.clone());
+                user_dispatch.set(UserState {response_user: response_user.clone()});
                 Ok(response_user)
             },
             Err(error) => {
@@ -32,8 +34,17 @@ pub fn register() -> Html {
         }
     });
 
+    let register_onclick = {
+        let handle_register = handle_register.clone();
+        Callback::from(move |_| {
+            handle_register.run();
+        })
+    };
+
     html! {
         <>
+            <pre>{user_state.response_user.to_owned()}</pre>
+            <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90" onclick={register_onclick}>{"Register"}</button>
         </>
     }
 }

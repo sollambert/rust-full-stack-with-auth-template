@@ -4,7 +4,7 @@ use axum::{
     Json,Router
 };
 
-use types::user::{CreateUser, ResponseUser};
+use types::user::{RegisterUser, UserInfo};
 
 use crate::strategies::users;
 
@@ -17,8 +17,8 @@ pub fn routes() -> Router {
 }
 
 //default route
-async fn default_user() -> (StatusCode, Json<ResponseUser>) {
-    return (StatusCode::OK, Json(ResponseUser {
+async fn default_user() -> (StatusCode, Json<UserInfo>) {
+    return (StatusCode::OK, Json(UserInfo {
         uuid: "empty_user".to_owned(),
         username: "empty_user".to_owned(),
         email: "empty_user".to_owned()
@@ -28,10 +28,10 @@ async fn default_user() -> (StatusCode, Json<ResponseUser>) {
 
 // handler for creating a new user
 async fn create_user(
-    Json(payload): Json<CreateUser>,
-) -> (StatusCode, Json<ResponseUser>) {
+    Json(payload): Json<RegisterUser>,
+) -> (StatusCode, Json<UserInfo>) {
     // empty ResponseUser object to send if errors encountered
-    let response_user = ResponseUser {
+    let response_user = UserInfo {
         uuid: String::new(),
         username: String::new(),
         email: String::new()
@@ -50,7 +50,7 @@ async fn create_user(
             }
             let user = result.unwrap();
             // re-create response_user with populated fields
-            let response_user = ResponseUser {
+            let response_user = UserInfo {
                 uuid: user.uuid,
                 email: user.email,
                 username: user.username
