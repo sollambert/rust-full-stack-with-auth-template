@@ -1,11 +1,25 @@
-use sqlx::{Pool, SqlitePool, sqlite::SqlitePoolOptions, PgPool, postgres::PgPoolOptions};
-use std::{env, time::Duration};
+use std::env;
+
+use std::time::Duration;
 use once_cell::sync::OnceCell;
 
-#[cfg(feature = "postgres")]
+#[cfg(not(any(feature = "postgres", feature = "sqlite")))]
+use sqlx::{any::{Any, AnyPoolOptions}, Pool};
+
+#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
+use sqlx::{PgPool, postgres::PgPoolOptions};
+
+#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
+use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
+
+#[cfg(not(any(feature = "postgres", feature = "sqlite")))]
+// global POOL singleton
+static POOL: OnceCell<Pool<Any>> = OnceCell::new();
+
+#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
 // global POOL singleton
 static POOL: OnceCell<PgPool> = OnceCell::new();
-#[cfg(feature = "sqlite")]
+#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
 // global POOL singleton
 static POOL: OnceCell<SqlitePool> = OnceCell::new();
 
@@ -21,10 +35,18 @@ pub async fn create_pool() {
     init_pool(database_url).await;
 }
 
-#[cfg(not(feature = "postgres"))]
-#[cfg(not(feature = "sqlite"))]
-async fn init_pool(_database_url: String) {
-    panic!("No db features enabled!");
+#[cfg(not(any(feature = "postgres", feature = "sqlite")))]
+async fn init_pool(database_url: String) {
+    let pool = match AnyPoolOptions::new()
+        .max_connections(100)
+        .idle_timeout(Some(Duration::from_millis(1000)))
+        .connect(&database_url).await {
+            Ok(pool) => pool,
+            Err(error) => {
+                panic!("Could not create pool: {}", error);
+            }
+        };
+    POOL.set(pool).unwrap();
 }
 
 #[cfg(feature = "postgres")]
@@ -55,17 +77,17 @@ async fn init_pool(database_url: String) {
     POOL.set(pool).unwrap();
 }
 
-#[cfg(not(feature = "postgres"))]
-#[cfg(not(feature = "sqlite"))]
-pub fn get_pool() -> PgPool {
-    panic!("No db features enabled!");
+pub fn get_pool() -> Pool<Any> {
+    POOL.get().unwrap().to_owned()
 }
-#[cfg(feature = "postgres")]
+
+#[cfg(all(feature = "postgres", not(feature = "sqlite")))]
 // getter for accessing global POOL singleton in other modules
 pub fn get_pool() -> PgPool {
     POOL.get().unwrap().to_owned()
 }
-#[cfg(feature = "sqlite")]
+
+#[cfg(all(feature = "sqlite", not(feature = "postgres")))]
 // getter for accessing global POOL singleton in other modules
 pub fn get_pool() -> SqlitePool {
     POOL.get().unwrap().to_owned()
