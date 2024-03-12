@@ -9,7 +9,7 @@ edition = "2021"
 log = "0.4"
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.114"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "cookies"] }
 yew = { version = "0.20.0", features = ["csr"] }
 yewdux = "0.9.3"
 yew-router = "0.17.0"
@@ -23,3 +23,4 @@ gloo-console = "0.3.0"
 tauri-sys = { git = "https://github.com/JonasKruckenberg/tauri-sys", features = ["all"] }
 
 types = { path = "../types" }
+cookie = "0.18.0"

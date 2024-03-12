@@ -4,9 +4,11 @@ use axum::{
     Json,Router
 };
 
+use http::{header, HeaderMap, HeaderValue};
+use serde_json::json;
 use types::user::{RegisterUser, UserInfo};
 
-use crate::strategies::users;
+use crate::strategies::{authentication::{generate_new_token, AuthError}, users};
 
 // route function to nest endpoints in router
 pub fn routes() -> Router {
@@ -19,9 +21,9 @@ pub fn routes() -> Router {
 //default route
 async fn default_user() -> (StatusCode, Json<UserInfo>) {
     return (StatusCode::OK, Json(UserInfo {
-        uuid: "empty_user".to_owned(),
-        username: "empty_user".to_owned(),
-        email: "empty_user".to_owned()
+        uuid: "".to_owned(),
+        username: "".to_owned(),
+        email: "".to_owned()
     }));
 }
 
@@ -29,13 +31,7 @@ async fn default_user() -> (StatusCode, Json<UserInfo>) {
 // handler for creating a new user
 async fn create_user(
     Json(payload): Json<RegisterUser>,
-) -> (StatusCode, Json<UserInfo>) {
-    // empty ResponseUser object to send if errors encountered
-    let response_user = UserInfo {
-        uuid: String::new(),
-        username: String::new(),
-        email: String::new()
-    };
+) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), (StatusCode, AuthError)> {
     // insert user into table
     // if successful return a valid ResponseUser and 201 CREATED
     // if unsuccessful return an empty ResponseUser object and a 400 BAD REQUEST
@@ -46,20 +42,24 @@ async fn create_user(
             let result = users::get_db_user_by_id(id).await;
             // check result for error and return error code if necessary
             if let Err(_) = result {
-                return (StatusCode::INTERNAL_SERVER_ERROR, Json(response_user));
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, AuthError::InvalidToken));
             }
             let user = result.unwrap();
-            // re-create response_user with populated fields
-            let response_user = UserInfo {
+            // re-create user_info with populated fields
+            let user_info = UserInfo {
                 uuid: user.uuid,
                 email: user.email,
                 username: user.username
             };
-            return (StatusCode::CREATED, Json(response_user))
+            let mut header_map = HeaderMap::new();
+            let token = generate_new_token();
+            let header_value = HeaderValue::from_str(("auth_token=".to_string() + json!(token).to_string().as_str()).as_str()).unwrap();
+            header_map.insert(header::SET_COOKIE, header_value);
+            Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info.clone())))
         },
         Err(_) => {
             // send 500 SERVICE UNAVAILABLE with empty ResponseUser
-            return (StatusCode::SERVICE_UNAVAILABLE, Json(response_user))
+            return Err((StatusCode::SERVICE_UNAVAILABLE, AuthError::InvalidToken));
         }
     }
 }

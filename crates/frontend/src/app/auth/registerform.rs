@@ -1,4 +1,4 @@
-use gloo_console::{error, log};
+use gloo_console::error;
 use types::user::RegisterUser;
 use web_sys::HtmlInputElement;
 use yew::{function_component, html, use_state, Callback, Html, InputEvent, SubmitEvent, TargetCast};
@@ -8,8 +8,8 @@ use yewdux::prelude::*;
 
 use crate::{services, app::UserState, components::{button::Button, input::Input}};
 
-#[function_component(Register)]
-pub fn register() -> Html {
+#[function_component(RegisterForm)]
+pub fn register_form() -> Html {
     let (user_state, user_dispatch) = use_store::<UserState>();
     let register_user = use_state(RegisterUser::default);
 

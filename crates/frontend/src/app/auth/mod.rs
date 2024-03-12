@@ -1,2 +1,2 @@
-pub mod login;
-pub mod register;
+pub mod loginform;
+pub mod registerform;

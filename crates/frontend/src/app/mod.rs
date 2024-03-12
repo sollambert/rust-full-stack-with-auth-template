@@ -7,7 +7,7 @@ use yew_hooks::prelude::*;
 // use gloo_console::log;
 
 use types::user::UserInfo;
-use crate::{app::auth::register::Register, components::button::Button};
+use crate::{app::auth::registerform::RegisterForm, components::button::Button};
 
 
 #[derive(Default, PartialEq, Store)]
@@ -114,8 +114,8 @@ pub fn app() -> Html {
     html! {
         <>
             <p class="space-x-4 m-4">
-                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90" {onclick}>{ "Load backend api" }</button>
-                <button class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90" onclick={onclickserver}>{ "Load server api" }</button>
+                <Button onclick={onclick} label={"Load backend api"} />
+                <Button onclick={onclickserver} label={"Load server api"} />
             </p>
             {
                 if let Some(response) = &state.data {
@@ -146,7 +146,7 @@ pub fn app() -> Html {
                     }
                 })
             }
-            <Register />
+            <RegisterForm />
         </>
     }
 }

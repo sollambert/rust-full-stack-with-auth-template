@@ -31,6 +31,12 @@ pub struct LoginUser {
     pub pass: String
 }
 
+impl fmt::Display for LoginUser {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Username: {}\nPass: {}", self.username, self.pass)
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 #[cfg_attr(feature = "sqlx", derive(sqlx::FromRow))]
 pub struct UserInfo {
