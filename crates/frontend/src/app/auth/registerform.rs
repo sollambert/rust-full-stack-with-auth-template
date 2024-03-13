@@ -50,7 +50,7 @@ pub fn register_form() -> Html {
             match response {
                 Ok(user_info) => {
                     // (response_user.clone());
-                    user_dispatch.set(UserState {user_info: user_info.clone().user_info});
+                    user_dispatch.set(UserState {user_info: user_info.clone()});
                     register_user.set(RegisterUser::default());
                     Ok(user_info)
                 },

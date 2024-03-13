@@ -1,11 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::user::UserInfo;
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthToken {
-    access_token: String,
-    token_type: String
+    pub access_token: String,
+    pub token_type: String
 }
 
 impl AuthToken {
@@ -15,10 +13,9 @@ impl AuthToken {
             token_type: "Bearer".to_string(),
         }
     }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AuthBody {
-    pub token: AuthToken,
-    pub user_info: UserInfo
+    pub fn to_string(self: AuthToken) -> String {
+        let mut string = self.token_type;
+        string.push_str((" ".to_owned() + self.access_token.as_str()).as_str());
+        string
+    }
 }

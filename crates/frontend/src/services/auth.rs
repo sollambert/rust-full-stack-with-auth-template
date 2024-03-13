@@ -2,19 +2,22 @@ use gloo_console::error;
 // use gloo_net::http::Request;
 
 use gloo_storage::Storage;
-use reqwest::{Client, StatusCode};
-use types::{auth::AuthBody, user::{LoginUser, RegisterUser}};
+use reqwest::{header::AUTHORIZATION, StatusCode};
+use types::user::{LoginUser, RegisterUser, UserInfo};
 
-pub async fn register_user(user: RegisterUser) -> Result<AuthBody, StatusCode> {
-    let response = Client::builder()
-        .build()
-        .unwrap().post("http://localhost:3001/user/create").json(&user).send().await;
+use super::{get_http_client};
+
+pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
+    let response = get_http_client().post("http://localhost:3001/user/create").json(&user).send().await;
     let auth_body = match response {
         Ok(data) => {
             let status = data.status();
-            match data.json::<AuthBody>().await {
+            let headers = data.headers();
+            headers.get_all(AUTHORIZATION).into_iter().for_each(|header_value| {
+                gloo_storage::LocalStorage::set("AUTH_TOKEN", header_value.to_str().unwrap()).unwrap();
+            });
+            match data.json::<UserInfo>().await {
                 Ok(auth_body) => {
-                    gloo_storage::LocalStorage::set("AUTH_TOKEN", auth_body.clone().token).unwrap();
                     Ok(auth_body)
                 },
                 Err(error) => {
@@ -31,16 +34,17 @@ pub async fn register_user(user: RegisterUser) -> Result<AuthBody, StatusCode> {
     return auth_body;
 }
 
-pub async fn login_user(user: LoginUser) -> Result<AuthBody, StatusCode>  {
-    let response = Client::builder()
-        .build()
-        .unwrap().post("http://localhost:3001/user/create").json(&user).send().await;
+pub async fn login_user(user: LoginUser) -> Result<UserInfo, StatusCode>  {
+    let response = get_http_client().post("http://localhost:3001/auth/login").json(&user).send().await;
     let auth_body = match response {
         Ok(data) => {
             let status = data.status();
-            match data.json::<AuthBody>().await {
+            let headers = data.headers();
+            headers.get_all(AUTHORIZATION).into_iter().for_each(|header_value| {
+                gloo_storage::LocalStorage::set("AUTH_TOKEN", header_value.to_str().unwrap()).unwrap();
+            });
+            match data.json::<UserInfo>().await {
                 Ok(auth_body) => {
-                    gloo_storage::LocalStorage::set("AUTH_TOKEN", auth_body.clone().token).unwrap();
                     Ok(auth_body)
                 },
                 Err(error) => {

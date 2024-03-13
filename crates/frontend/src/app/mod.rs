@@ -6,10 +6,9 @@ use yew::prelude::*;
 use yewdux::prelude::*;
 use yew_hooks::prelude::*;
 // use gloo_console::log;
-use gloo_storage::{LocalStorage, Storage};
 
 use types::user::UserInfo;
-use crate::{app::auth::registerform::RegisterForm, components::button::Button};
+use crate::{app::auth::registerform::RegisterForm, components::button::Button, services};
 
 
 #[derive(Default, PartialEq, Store)]
@@ -20,6 +19,7 @@ struct UserState {
 
 #[function_component(App)]
 pub fn app() -> Html {
+
     // Get backend port automatically from tauri command.
     let port = use_async_with_options(
         async move {

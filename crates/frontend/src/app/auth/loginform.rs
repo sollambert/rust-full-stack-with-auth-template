@@ -38,10 +38,10 @@ pub fn register_form() -> Html {
         use_async(async move {
             let response = services::auth::login_user((*login_user).clone()).await;
             match response {
-                Ok(auth_body) => {
-                    user_dispatch.set(UserState {user_info: auth_body.clone().user_info});
+                Ok(user_info) => {
+                    user_dispatch.set(UserState {user_info: user_info.clone()});
                     login_user.set(LoginUser::default());
-                    Ok(auth_body)
+                    Ok(user_info)
                 },
                 Err(error) => {
                     error!("No response found: {}", error.to_string());

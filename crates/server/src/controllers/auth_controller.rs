@@ -2,11 +2,8 @@ use axum::{
     http::StatusCode, middleware, routing::post, Json, Router
 };
 use bcrypt::verify;
-use cookie::{CookieBuilder, SameSite};
-use http::{header::{self, SET_COOKIE}, HeaderMap, HeaderValue};
-use serde::Serialize;
-use serde_json::json;
-use types::{auth::AuthBody, user::{LoginUser, UserInfo}};
+use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
+use types::user::{LoginUser, UserInfo};
 
 use crate::{strategies::{users, authentication::{AuthError, generate_new_token}}, middleware::token_athentication};
 
@@ -31,7 +28,7 @@ async fn protected() -> Result<String, AuthError> {
 // route for logging in user with provided LoginUser json
 async fn login_user(
     Json(payload): Json<LoginUser>,
-) -> Result<(StatusCode, HeaderMap, Json<AuthBody>), AuthError> {
+) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), AuthError> {
     // check if supplied credentials are not empty
     if payload.username.is_empty() || payload.pass.is_empty() {
         return Err(AuthError::MissingCredentials)
@@ -53,12 +50,10 @@ async fn login_user(
             username: user.username,
             email: user.email
         };
-        let header_map = HeaderMap::new();
-        let auth_body = AuthBody {
-            token: generate_new_token(),
-            user_info
-        };
-        Ok((StatusCode::CREATED, header_map.clone(), axum::Json(auth_body)))
+        let auth_token = generate_new_token();
+        let mut header_map = HeaderMap::new();
+        header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
+        Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))
     } else {
         // send 400 response with JSON response
         Err(AuthError::WrongCredentials)
