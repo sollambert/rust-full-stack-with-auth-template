@@ -1,4 +1,4 @@
-use gloo_console::{error, log};
+use gloo_console::{error};
 use types::user::LoginUser;
 use web_sys::HtmlInputElement;
 use yew::{function_component, html, use_state, Callback, Html, InputEvent, SubmitEvent, TargetCast};

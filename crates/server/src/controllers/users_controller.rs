@@ -54,7 +54,7 @@ async fn create_user(
             let mut header_map = HeaderMap::new();
             let token = generate_new_token();
             let header_value = HeaderValue::from_str(("auth_token=".to_string() + json!(token).to_string().as_str()).as_str()).unwrap();
-            header_map.insert(header::SET_COOKIE, header_value);
+            header_map.insert(header::COOKIE, header_value);
             Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info.clone())))
         },
         Err(_) => {

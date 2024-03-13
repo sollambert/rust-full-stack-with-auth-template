@@ -7,5 +7,3 @@ members = [
     "crates/tauri",
     "crates/types",
 ]
-[workspace.dependencies]
-indexmap = "~1.6.2"

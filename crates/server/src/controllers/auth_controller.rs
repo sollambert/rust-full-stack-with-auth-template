@@ -1,9 +1,8 @@
 use axum::{
-    http::StatusCode, middleware, response::{IntoResponse, Response}, routing::post, Json, Router
+    http::StatusCode, middleware, routing::post, Json, Router
 };
 use bcrypt::verify;
 use http::{header, HeaderMap, HeaderValue};
-use serde::Serialize;
 use serde_json::json;
 use types::user::{UserInfo, LoginUser};
 
@@ -62,7 +61,7 @@ async fn login_user(
         let mut header_map = HeaderMap::new();
         let token = generate_new_token();
         let header_value = HeaderValue::from_str(("auth_token=".to_string() + json!(token).to_string().as_str()).as_str()).unwrap();
-        header_map.insert(header::SET_COOKIE, header_value);
+        header_map.insert(header::COOKIE, header_value);
         Ok((StatusCode::OK, header_map.clone(), axum::Json(user_info.clone())))
     } else {
         // send 400 response with JSON response

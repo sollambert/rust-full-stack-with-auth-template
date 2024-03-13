@@ -1,38 +1,32 @@
 use gloo_console::{error, log};
-use reqwest::{header::{HeaderMap, SET_COOKIE}, StatusCode};
-use serde_json::json;
-use cookie::{Cookie, CookieBuilder, CookieJar};
+// use gloo_net::http::Request;
+
+use gloo_storage::Storage;
+use reqwest::{Client, StatusCode};
 use types::user::{LoginUser, RegisterUser, UserInfo};
 
 pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
-    let client = reqwest::Client::new();
-    let response = client.post("http://localhost:3001/user/create")
-        .json(&json!(user))
-        .send()
-        .await;
+    // let response = Request::post("http://localhost:3001/user/create")
+    //     .json(&user).unwrap()
+    //     .send()
+    //     .await;
+    let response = Client::builder()
+        .build()
+        .unwrap().post("http://localhost:3001/user/create").json(&user).send().await;
+    // let response = Request::post("http://localhost:3001/user/create")
+    //     .json(&user).unwrap().send().await;
     let user = match response {
         Ok(data) => {
-            let mut jar = CookieJar::new();
+            log!(format!("Data: {:?}", data));
+            // let status = StatusCode::from_u16(data.status()).unwrap();
             let status = data.status();
-            // let headers: HeaderMap = data.headers().clone();
-            // data.headers().values().for_each(|header| {
-            //     log!(format!("{}", header.to_str().unwrap()));
-            // });
-            let cookies = data.cookies();
-            for cookie in cookies {
-                jar.add(Cookie::build((cookie.name().clone(), cookie.value().clone())));
-            }
-            // for cookie in cookies {
-            //     match cookie.to_str() {
-            //         Ok(cookie_str) => {
-            //             jar.add_original(Cookie::parse(cookie_str.to_string()).unwrap());
-            //             log!(format!("Cookie header: {}", cookie_str));
-            //         },
-            //         Err(error) => {
-            //             log!(format!("Error parsing cookie: {}", error));
-            //         }
-            //     }
-            // }
+            data.headers().into_iter().for_each(|header| {
+                log!(format!("{} = {:?}", header.0, header.1));
+                if header.0 == "cookie" {
+                    let cookie: Vec<&str> = header.1.to_str().unwrap().split("=").collect();
+                    gloo_storage::LocalStorage::set(cookie[0],cookie[1]).unwrap();
+                }
+            });
             log!("Request returned ", status.to_string());
             // Ok(UserInfo::default())
             match data.json::<UserInfo>().await {
@@ -45,20 +39,23 @@ pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
         },
         Err(error) => {
             error!("Error with request: {}", error.to_string());
-            Err(StatusCode::BAD_GATEWAY)
+            Err(StatusCode::BAD_REQUEST)
         }
     };
     return user;
 }
 
 pub async fn login_user(user: LoginUser) -> Result<UserInfo, StatusCode>  {
-    let client = reqwest::Client::new();
-    let response = client.post("http://localhost:3001/auth/login")
-        .json(&json!(user))
-        .send()
-        .await;
+    // let response = Request::post("http://localhost:3001/user/create")
+    // .json(&user).unwrap()
+    // .send()
+    // .await;
+    let response = Client::builder()
+        .build()
+        .unwrap().post("http://localhost:3001/user/create").json(&user).send().await;
     let user = match response {
         Ok(data) => {
+            // let status = StatusCode::from_u16(data.status()).unwrap();
             let status = data.status();
             match data.json::<UserInfo>().await {
                 Ok(user) => Ok(user),
@@ -70,7 +67,7 @@ pub async fn login_user(user: LoginUser) -> Result<UserInfo, StatusCode>  {
         },
         Err(error) => {
             error!("Error with request: {}", error.to_string());
-            Err(StatusCode::BAD_GATEWAY)
+            Err(StatusCode::BAD_REQUEST)
         }
     };
     return user;

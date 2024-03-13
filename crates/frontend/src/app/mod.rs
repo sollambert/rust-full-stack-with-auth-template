@@ -1,10 +1,12 @@
 pub mod auth;
 
+use gloo_net::http::Request;
 use tauri_sys::tauri::invoke;
 use yew::prelude::*;
 use yewdux::prelude::*;
 use yew_hooks::prelude::*;
 // use gloo_console::log;
+use gloo_storage::{LocalStorage, Storage};
 
 use types::user::UserInfo;
 use crate::{app::auth::registerform::RegisterForm, components::button::Button};
@@ -35,7 +37,7 @@ pub fn app() -> Html {
         use_async(async move {
             match &port.data {
                 Some(port) => {
-                    let response = reqwest::get(format!("http://localhost:{}/user", port)).await;
+                    let response = Request::get(format!("http://localhost:{}/user", port).as_str()).send().await;
                     match response {
                         Ok(data) => match data.json::<UserInfo>().await {
                             Ok(user) => Ok(user),
@@ -58,7 +60,7 @@ pub fn app() -> Html {
 
     // Fetch data from server.
     let state_server = use_async(async move {
-        let response = reqwest::get("http://localhost:3001/user").await;
+        let response = Request::get("http://localhost:3001/user").send().await;
         match response {
             Ok(data) => match data.json::<UserInfo>().await {
                 Ok(user) => Ok(user),
