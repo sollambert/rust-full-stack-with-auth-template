@@ -38,11 +38,10 @@ pub fn register_form() -> Html {
         use_async(async move {
             let response = services::auth::login_user((*login_user).clone()).await;
             match response {
-                Ok(response_user) => {
-                    // (response_user.clone());
-                    user_dispatch.set(UserState {response_user: response_user.clone()});
+                Ok(auth_body) => {
+                    user_dispatch.set(UserState {user_info: auth_body.clone().user_info});
                     login_user.set(LoginUser::default());
-                    Ok(response_user)
+                    Ok(auth_body)
                 },
                 Err(error) => {
                     error!("No response found: {}", error.to_string());
@@ -52,14 +51,14 @@ pub fn register_form() -> Html {
         })
     };
 
-    let register_onclick = {
+    let login_onclick = {
         let handle_login = handle_login.clone();
         Callback::from(move |_| {
             handle_login.run();
         })
     };
 
-    let register_onsubmit = {
+    let login_onsubmit = {
         let handle_login = handle_login.clone();
         Callback::from(move |ev: SubmitEvent| {
             ev.prevent_default();
@@ -70,13 +69,13 @@ pub fn register_form() -> Html {
     html! {
         <>
             <div class="m-4">
-                <pre>{"UserInfo: \n"}{user_state.response_user.to_string()}</pre>
+                <pre>{"UserInfo: \n"}{user_state.user_info.to_string()}</pre>
                 <br/>
                 <form class="flex flex-col w-64 h-64 space-y-2"
-                    onsubmit={register_onsubmit}>
+                    onsubmit={login_onsubmit}>
                     <Input input_type="text" placeholder="Username" oninput={oninput_username} value={login_user.username.to_owned()} />
                     <Input input_type="password" placeholder="Password" oninput={oninput_pass} value={login_user.pass.to_owned()} />
-                    <Button onclick={register_onclick} label="Register" />
+                    <Button onclick={login_onclick} label="Login" />
                 </form>
             </div>
         </>

@@ -4,9 +4,10 @@ use axum::{
     Json,Router
 };
 
-use http::{header, HeaderMap, HeaderValue};
+use cookie::{CookieBuilder, SameSite};
+use http::{header::{self, AUTHORIZATION, SET_COOKIE}, HeaderMap, HeaderValue};
 use serde_json::json;
-use types::user::{RegisterUser, UserInfo};
+use types::{auth::AuthBody, user::{RegisterUser, UserInfo}};
 
 use crate::strategies::{authentication::{generate_new_token, AuthError}, users};
 
@@ -31,7 +32,7 @@ async fn default_user() -> (StatusCode, Json<UserInfo>) {
 // handler for creating a new user
 async fn create_user(
     Json(payload): Json<RegisterUser>,
-) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), (StatusCode, AuthError)> {
+) -> Result<(StatusCode, HeaderMap, Json<AuthBody>), (StatusCode, AuthError)> {
     // insert user into table
     // if successful return a valid ResponseUser and 201 CREATED
     // if unsuccessful return an empty ResponseUser object and a 400 BAD REQUEST
@@ -51,11 +52,12 @@ async fn create_user(
                 email: user.email,
                 username: user.username
             };
-            let mut header_map = HeaderMap::new();
-            let token = generate_new_token();
-            let header_value = HeaderValue::from_str(("auth_token=".to_string() + json!(token).to_string().as_str()).as_str()).unwrap();
-            header_map.insert(header::COOKIE, header_value);
-            Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info.clone())))
+            let header_map = HeaderMap::new();
+            let auth_body = AuthBody {
+                token: generate_new_token(),
+                user_info
+            };
+            Ok((StatusCode::CREATED, header_map.clone(), axum::Json(auth_body)))
         },
         Err(_) => {
             // send 500 SERVICE UNAVAILABLE with empty ResponseUser

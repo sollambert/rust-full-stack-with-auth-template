@@ -2,9 +2,11 @@ use axum::{
     http::StatusCode, middleware, routing::post, Json, Router
 };
 use bcrypt::verify;
-use http::{header, HeaderMap, HeaderValue};
+use cookie::{CookieBuilder, SameSite};
+use http::{header::{self, SET_COOKIE}, HeaderMap, HeaderValue};
+use serde::Serialize;
 use serde_json::json;
-use types::user::{UserInfo, LoginUser};
+use types::{auth::AuthBody, user::{LoginUser, UserInfo}};
 
 use crate::{strategies::{users, authentication::{AuthError, generate_new_token}}, middleware::token_athentication};
 
@@ -16,13 +18,6 @@ pub fn routes() -> Router {
         .layer(middleware::from_fn(token_athentication::authenticate_token))
         .route("/login", post(login_user))
 }
-
-// response struct for login route
-// #[derive(Serialize)]
-// struct LoginResponse {
-//     auth: AuthBody,
-//     user: UserInfo
-// }
 
 // example route for authentication protection, will be replaced with middleware
 // right now, authentication is only required for routes that extract the Claims object from a requests decoded Bearer token
@@ -36,7 +31,7 @@ async fn protected() -> Result<String, AuthError> {
 // route for logging in user with provided LoginUser json
 async fn login_user(
     Json(payload): Json<LoginUser>,
-) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), AuthError> {
+) -> Result<(StatusCode, HeaderMap, Json<AuthBody>), AuthError> {
     // check if supplied credentials are not empty
     if payload.username.is_empty() || payload.pass.is_empty() {
         return Err(AuthError::MissingCredentials)
@@ -58,11 +53,12 @@ async fn login_user(
             username: user.username,
             email: user.email
         };
-        let mut header_map = HeaderMap::new();
-        let token = generate_new_token();
-        let header_value = HeaderValue::from_str(("auth_token=".to_string() + json!(token).to_string().as_str()).as_str()).unwrap();
-        header_map.insert(header::COOKIE, header_value);
-        Ok((StatusCode::OK, header_map.clone(), axum::Json(user_info.clone())))
+        let header_map = HeaderMap::new();
+        let auth_body = AuthBody {
+            token: generate_new_token(),
+            user_info
+        };
+        Ok((StatusCode::CREATED, header_map.clone(), axum::Json(auth_body)))
     } else {
         // send 400 response with JSON response
         Err(AuthError::WrongCredentials)

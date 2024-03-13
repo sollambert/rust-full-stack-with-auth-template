@@ -14,7 +14,7 @@ use crate::{app::auth::registerform::RegisterForm, components::button::Button};
 
 #[derive(Default, PartialEq, Store)]
 struct UserState {
-    response_user: UserInfo
+    user_info: UserInfo
 }
 
 
