@@ -80,8 +80,9 @@ impl IntoResponse for AuthError {
 /**
  * Generate a new token and return it as AuthToken object
  */
-pub fn generate_new_token() -> AuthToken {
+pub fn generate_new_token(uuid: String) -> AuthToken {
     let claims = Claims {
+        uuid,
         // issuer domain
         sub: env::var("JWT_SUB").unwrap(),
         // issuer company
@@ -96,6 +97,7 @@ pub fn generate_new_token() -> AuthToken {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
+    uuid: String,
     sub: String,
     com: String,
     iat: u64,

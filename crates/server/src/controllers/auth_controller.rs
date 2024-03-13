@@ -50,7 +50,7 @@ async fn login_user(
             username: user.username,
             email: user.email
         };
-        let auth_token = generate_new_token();
+        let auth_token = generate_new_token(user_info.uuid.clone());
         let mut header_map = HeaderMap::new();
         header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
         Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))
