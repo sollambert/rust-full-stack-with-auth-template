@@ -16,6 +16,7 @@ pub async fn authenticate_token(
     if let Err(e) = claims.validate() {
         return e.into_response()
     }
+    println!("{:?}", claims);
     // proceed to next layer
     next.run(request).await
 }

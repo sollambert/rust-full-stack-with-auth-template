@@ -1,29 +1,20 @@
 use axum::{
-    http::StatusCode, middleware, response::{IntoResponse, Response}, routing::post, Json, Router
+    http::StatusCode, middleware, routing::post, Json, Router
 };
 use bcrypt::verify;
-use http::{header, HeaderMap, HeaderValue};
-use serde::Serialize;
-use serde_json::json;
-use types::user::{UserInfo, LoginUser};
+use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
+use types::user::{LoginUser, UserInfo};
 
-use crate::{strategies::{users, authentication::{AuthError, generate_new_token}}, middleware::token_athentication};
+use crate::{strategies::{users, authentication::{AuthError, generate_new_token}}, middleware::token_authentication};
 
 // route function to nest endpoints in router
 pub fn routes() -> Router {
     // create routes
     Router::new()
         .route("/protected", post(protected))
-        .layer(middleware::from_fn(token_athentication::authenticate_token))
+        .layer(middleware::from_fn(token_authentication::authenticate_token))
         .route("/login", post(login_user))
 }
-
-// response struct for login route
-// #[derive(Serialize)]
-// struct LoginResponse {
-//     auth: AuthBody,
-//     user: UserInfo
-// }
 
 // example route for authentication protection, will be replaced with middleware
 // right now, authentication is only required for routes that extract the Claims object from a requests decoded Bearer token
@@ -59,11 +50,10 @@ async fn login_user(
             username: user.username,
             email: user.email
         };
+        let auth_token = generate_new_token(user_info.uuid.clone());
         let mut header_map = HeaderMap::new();
-        let token = generate_new_token();
-        let header_value = HeaderValue::from_str(("auth_token=".to_string() + json!(token).to_string().as_str()).as_str()).unwrap();
-        header_map.insert(header::SET_COOKIE, header_value);
-        Ok((StatusCode::OK, header_map.clone(), axum::Json(user_info.clone())))
+        header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
+        Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))
     } else {
         // send 400 response with JSON response
         Err(AuthError::WrongCredentials)

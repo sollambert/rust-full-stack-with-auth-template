@@ -48,11 +48,11 @@ pub fn register_form() -> Html {
         use_async(async move {
             let response = services::auth::register_user((*register_user).clone()).await;
             match response {
-                Ok(response_user) => {
+                Ok(user_info) => {
                     // (response_user.clone());
-                    user_dispatch.set(UserState {response_user: response_user.clone()});
+                    user_dispatch.set(UserState {user_info: user_info.clone()});
                     register_user.set(RegisterUser::default());
-                    Ok(response_user)
+                    Ok(user_info)
                 },
                 Err(error) => {
                     error!("No response found: {}", error.to_string());
@@ -80,7 +80,7 @@ pub fn register_form() -> Html {
     html! {
         <>
             <div class="m-4">
-                <pre>{"UserInfo: \n"}{user_state.response_user.to_string()}</pre>
+                <pre>{"UserInfo: \n"}{user_state.user_info.to_string()}</pre>
                 <br/>
                 <pre>{"RegisterUser: \n"}{register_user.to_owned().to_string()}</pre>
                 <br/>

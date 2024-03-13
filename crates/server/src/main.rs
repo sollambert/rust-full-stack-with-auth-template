@@ -3,6 +3,7 @@ use std::{net::SocketAddr, path::PathBuf};
 use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade}, response::IntoResponse, routing::get, Router
 };
+use http::HeaderValue;
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 
@@ -29,10 +30,16 @@ async fn main() {
     pool::create_pool().await;
 
 
-    let cors = CorsLayer::new()
-            .allow_origin(Any)
-            .allow_headers(Any)
-            .allow_methods(Any);
+    let cors = CorsLayer::permissive()
+        .allow_origin("http://localhost:3001".parse::<HeaderValue>().unwrap())
+        .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap())
+        .allow_origin("http://127.0.0.1:3001".parse::<HeaderValue>().unwrap())
+        .allow_origin("http://127.0.0.1:8080".parse::<HeaderValue>().unwrap())
+        .expose_headers(Any);
+            // .allow_origin(Any)
+            // .expose_headers(Any)
+            // .allow_headers(Any)
+            // .allow_methods(Any);
 
     let app = Router::new()
         .route("/ws", get(ws_handler))

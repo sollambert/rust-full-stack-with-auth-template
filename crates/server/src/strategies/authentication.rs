@@ -12,6 +12,7 @@ use jsonwebtoken::{EncodingKey, DecodingKey, Validation, decode, encode, Header}
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use types::auth::AuthToken;
 
 // Keys for encoding/decoding authorization tokens with JWT_SECRET
 static KEYS: Lazy<Keys> = Lazy::new(|| {
@@ -77,10 +78,11 @@ impl IntoResponse for AuthError {
 }
 
 /**
- * Generate a new token and return it as AuthBody object
+ * Generate a new token and return it as AuthToken object
  */
-pub fn generate_new_token() -> AuthBody {
+pub fn generate_new_token(uuid: String) -> AuthToken {
     let claims = Claims {
+        uuid,
         // issuer domain
         sub: env::var("JWT_SUB").unwrap(),
         // issuer company
@@ -89,12 +91,13 @@ pub fn generate_new_token() -> AuthBody {
         // expiration timestamp from unix epoch
         exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME
     };
-    AuthBody::new(encode(&Header::default(), &claims, &KEYS.encoding)
+    AuthToken::new(encode(&Header::default(), &claims, &KEYS.encoding)
         .map_err(|_| AuthError::TokenCreation).unwrap())
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
+    uuid: String,
     sub: String,
     com: String,
     iat: u64,
@@ -109,21 +112,6 @@ impl Claims {
             return Err(AuthError::TokenExpired)
         }
         Ok(())
-    }
-}
-
-#[derive(Debug, Serialize)]
-pub struct AuthBody {
-    access_token: String,
-    token_type: String
-}
-
-impl AuthBody {
-    fn new(access_token: String) -> Self {
-        Self {
-            access_token,
-            token_type: "Bearer".to_string(),
-        }
     }
 }
 

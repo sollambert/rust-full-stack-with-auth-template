@@ -4,8 +4,7 @@ use axum::{
     Json,Router
 };
 
-use http::{header, HeaderMap, HeaderValue};
-use serde_json::json;
+use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
 use types::user::{RegisterUser, UserInfo};
 
 use crate::strategies::{authentication::{generate_new_token, AuthError}, users};
@@ -51,11 +50,10 @@ async fn create_user(
                 email: user.email,
                 username: user.username
             };
+            let auth_token = generate_new_token(user_info.uuid.clone());
             let mut header_map = HeaderMap::new();
-            let token = generate_new_token();
-            let header_value = HeaderValue::from_str(("auth_token=".to_string() + json!(token).to_string().as_str()).as_str()).unwrap();
-            header_map.insert(header::SET_COOKIE, header_value);
-            Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info.clone())))
+            header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
+            Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))
         },
         Err(_) => {
             // send 500 SERVICE UNAVAILABLE with empty ResponseUser
