@@ -5,14 +5,14 @@ use bcrypt::verify;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
 use types::user::{LoginUser, UserInfo};
 
-use crate::{strategies::{users, authentication::{AuthError, generate_new_token}}, middleware::token_athentication};
+use crate::{strategies::{users, authentication::{AuthError, generate_new_token}}, middleware::token_authentication};
 
 // route function to nest endpoints in router
 pub fn routes() -> Router {
     // create routes
     Router::new()
         .route("/protected", post(protected))
-        .layer(middleware::from_fn(token_athentication::authenticate_token))
+        .layer(middleware::from_fn(token_authentication::authenticate_token))
         .route("/login", post(login_user))
 }
 
