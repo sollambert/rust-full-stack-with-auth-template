@@ -5,9 +5,9 @@ use axum::{
 };
 
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
-use types::user::{RegisterUser, UserInfo};
+use types::{auth::AuthToken, user::{RegisterUser, UserInfo}};
 
-use crate::strategies::{authentication::{generate_new_token, AuthError}, users};
+use crate::strategies::{authentication::{generate_requester_token, AuthError}, users};
 
 // route function to nest endpoints in router
 pub fn routes() -> Router {
@@ -50,7 +50,15 @@ async fn create_user(
                 email: user.email,
                 username: user.username
             };
-            let auth_token = generate_new_token(user_info.uuid.clone());
+            let token_result = generate_requester_token(user_info.uuid.clone());
+            let auth_token: AuthToken;
+            match token_result {
+                Ok(token) => auth_token = token,
+                Err(error) => {
+                    println!("Error creating token for UUID {}: {:?}", user_info.uuid, error);
+                    return Err((StatusCode::FORBIDDEN, error))
+                }
+            }
             let mut header_map = HeaderMap::new();
             header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
             Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))

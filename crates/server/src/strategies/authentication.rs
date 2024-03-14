@@ -21,7 +21,15 @@ static KEYS: Lazy<Keys> = Lazy::new(|| {
 });
 
 static TOKEN_LIFETIME: Lazy<u64> = Lazy::new(|| {
-    u64::from_str_radix(env::var("JWT_EXPIRE").expect("JWT_EXPIRE must be configured").as_str(), 10).expect("Cannot parse JWT_EXPIRE as u64")
+    u64::from_str_radix(env::var("AUTH_TOKEN_EXPIRE")
+        .expect("AUTH_TOKEN_EXPIRE must be configured").as_str(), 10)
+        .expect("Cannot parse AUTH_TOKEN_EXPIRE as u64")
+});
+
+static TOKEN_REQUESTER_LIFETIME: Lazy<u64> = Lazy::new(|| {
+    u64::from_str_radix(env::var("AUTH_REQUEST_TOKEN_EXPIRE")
+        .expect("AUTH_REQUEST_TOKEN_EXPIRE must be configured").as_str(), 10)
+        .expect("Cannot parse AUTH_REQUEST_TOKEN_EXPIRE as u64")
 });
 
 struct Keys {
@@ -39,10 +47,10 @@ impl Keys {
 }
 
 /**
- * Implement FromRequestParts trait for Claims struct to allow extracting from request body
+ * Implement FromRequestParts trait for AuthClaims struct to allow extracting from request body
  */
 #[async_trait]
-impl<S> FromRequestParts<S> for Claims
+impl<S> FromRequestParts<S> for AuthClaims
 where
     S: Send + Sync,
 {
@@ -55,7 +63,7 @@ where
             .await
             .map_err(|_| AuthError::InvalidToken)?;
         // Decode the user data
-        let token_data = decode::<Claims>(bearer.token(), &KEYS.decoding, &Validation::default())
+        let token_data = decode::<AuthClaims>(bearer.token(), &KEYS.decoding, &Validation::default())
         .map_err(|_| AuthError::InvalidToken)?;
         Ok(token_data.claims)
     }
@@ -80,8 +88,8 @@ impl IntoResponse for AuthError {
 /**
  * Generate a new token and return it as AuthToken object
  */
-pub fn generate_new_token(uuid: String) -> Result<AuthToken, AuthError> {
-    let claims = Claims {
+pub fn generate_auth_token(uuid: String) -> Result<AuthToken, AuthError> {
+    let auth_claims = AuthClaims {
         uuid,
         // issuer domain
         sub: env::var("JWT_SUB").unwrap(),
@@ -91,7 +99,29 @@ pub fn generate_new_token(uuid: String) -> Result<AuthToken, AuthError> {
         // expiration timestamp from unix epoch
         exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME
     };
-    match encode(&Header::default(), &claims, &KEYS.encoding) {
+    match encode(&Header::default(), &auth_claims, &KEYS.encoding) {
+        Ok(encoded_string) => {
+            Ok(AuthToken::new(encoded_string))
+        },
+        Err(error) => {
+            println!("Error creating token: {}", error);
+            Err(AuthError::TokenCreation)
+        }
+    }
+}
+
+pub fn generate_requester_token(uuid: String) -> Result<AuthToken, AuthError> {
+    let auth_claims = AuthClaims {
+        uuid,
+        // issuer domain
+        sub: env::var("JWT_SUB").unwrap(),
+        // issuer company
+        com: env::var("JWT_COMPANY").unwrap(),
+        iat: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
+        // expiration timestamp from unix epoch
+        exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME
+    };
+    match encode(&Header::default(), &auth_claims, &KEYS.encoding) {
         Ok(encoded_string) => {
             Ok(AuthToken::new(encoded_string))
         },
@@ -103,7 +133,7 @@ pub fn generate_new_token(uuid: String) -> Result<AuthToken, AuthError> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
+pub struct AuthClaims {
     uuid: String,
     sub: String,
     com: String,
@@ -111,7 +141,16 @@ pub struct Claims {
     exp: u64
 }
 
-impl Claims {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthRequesterClaims {
+    uuid: String,
+    sub: String,
+    com: String,
+    iat: u64,
+    exp: u64
+}
+
+impl AuthClaims {
     pub fn validate(&self) -> Result<(), AuthError> {
         // iat validation
         let lifetime = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - self.iat;

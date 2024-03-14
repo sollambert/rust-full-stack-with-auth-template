@@ -5,7 +5,7 @@ use gloo_storage::Storage;
 use reqwest::{header::AUTHORIZATION, StatusCode};
 use types::user::{LoginUser, RegisterUser, UserInfo};
 
-use super::{get_http_client};
+use super::get_http_client;
 
 pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
     let response = get_http_client().post("http://localhost:3001/user/create").json(&user).send().await;
@@ -14,7 +14,7 @@ pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
             let status = data.status();
             let headers = data.headers();
             headers.get_all(AUTHORIZATION).into_iter().for_each(|header_value| {
-                gloo_storage::LocalStorage::set("AUTH_TOKEN", header_value.to_str().unwrap()).unwrap();
+                gloo_storage::SessionStorage::set("AUTH_REQUESTER_TOKEN", header_value.to_str().unwrap()).unwrap();
             });
             match data.json::<UserInfo>().await {
                 Ok(auth_body) => {
@@ -41,7 +41,7 @@ pub async fn login_user(user: LoginUser) -> Result<UserInfo, StatusCode>  {
             let status = data.status();
             let headers = data.headers();
             headers.get_all(AUTHORIZATION).into_iter().for_each(|header_value| {
-                gloo_storage::LocalStorage::set("AUTH_TOKEN", header_value.to_str().unwrap()).unwrap();
+                gloo_storage::SessionStorage::set("AUTH_REQUESTER_TOKEN", header_value.to_str().unwrap()).unwrap();
             });
             match data.json::<UserInfo>().await {
                 Ok(auth_body) => {

@@ -5,7 +5,7 @@ use bcrypt::verify;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
 use types::{auth::AuthToken, user::{LoginUser, UserInfo}};
 
-use crate::{strategies::{users, authentication::{AuthError, generate_new_token}}, middleware::token_authentication};
+use crate::{strategies::{users, authentication::{AuthError, generate_requester_token}}, middleware::token_authentication};
 
 // route function to nest endpoints in router
 pub fn routes() -> Router {
@@ -28,17 +28,16 @@ async fn protected() -> Result<String, AuthError> {
 // route for logging in user with provided LoginUser json
 async fn login_user(
     Json(payload): Json<LoginUser>,
-) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), AuthError> {
+) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), (StatusCode, AuthError)> {
     // check if supplied credentials are not empty
     if payload.username.is_empty() || payload.pass.is_empty() {
-        return Err(AuthError::MissingCredentials)
+        return Err((StatusCode::FORBIDDEN, AuthError::WrongCredentials));
     }
     // get user by username from database
     let result = users::get_db_user_by_username(payload.username).await;
     // if can't get user by username, return 400
     if let Err(_) = result {
-        // return (StatusCode::BAD_REQUEST, Json(user_info));
-        return Err(AuthError::WrongCredentials)
+        return Err((StatusCode::FORBIDDEN, AuthError::WrongCredentials));
     }
     // unwrap result from DB as user object
     let user = result.unwrap();
@@ -50,13 +49,13 @@ async fn login_user(
             username: user.username,
             email: user.email
         };
-        let token_result = generate_new_token(user_info.uuid.clone());
+        let token_result = generate_requester_token(user_info.uuid.clone());
         let auth_token: AuthToken;
         match token_result {
             Ok(token) => auth_token = token,
             Err(error) => {
                 println!("Error creating token for UUID {}: {:?}", user_info.uuid, error);
-                return Err(error)
+                return Err((StatusCode::FORBIDDEN, error))
             }
         }
         let mut header_map = HeaderMap::new();
@@ -64,6 +63,6 @@ async fn login_user(
         Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))
     } else {
         // send 400 response with JSON response
-        Err(AuthError::WrongCredentials)
+            return Err((StatusCode::FORBIDDEN, AuthError::WrongCredentials));
     }
 }
