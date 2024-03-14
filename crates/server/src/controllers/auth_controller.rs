@@ -3,7 +3,7 @@ use axum::{
 };
 use bcrypt::verify;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
-use types::user::{LoginUser, UserInfo};
+use types::{auth::AuthToken, user::{LoginUser, UserInfo}};
 
 use crate::{strategies::{users, authentication::{AuthError, generate_new_token}}, middleware::token_authentication};
 
@@ -50,7 +50,15 @@ async fn login_user(
             username: user.username,
             email: user.email
         };
-        let auth_token = generate_new_token(user_info.uuid.clone());
+        let token_result = generate_new_token(user_info.uuid.clone());
+        let auth_token: AuthToken;
+        match token_result {
+            Ok(token) => auth_token = token,
+            Err(error) => {
+                println!("Error creating token for UUID {}: {:?}", user_info.uuid, error);
+                return Err(error)
+            }
+        }
         let mut header_map = HeaderMap::new();
         header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
         Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))

@@ -80,7 +80,7 @@ impl IntoResponse for AuthError {
 /**
  * Generate a new token and return it as AuthToken object
  */
-pub fn generate_new_token(uuid: String) -> AuthToken {
+pub fn generate_new_token(uuid: String) -> Result<AuthToken, AuthError> {
     let claims = Claims {
         uuid,
         // issuer domain
@@ -91,8 +91,15 @@ pub fn generate_new_token(uuid: String) -> AuthToken {
         // expiration timestamp from unix epoch
         exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME
     };
-    AuthToken::new(encode(&Header::default(), &claims, &KEYS.encoding)
-        .unwrap_or_default())
+    match encode(&Header::default(), &claims, &KEYS.encoding) {
+        Ok(encoded_string) => {
+            Ok(AuthToken::new(encoded_string))
+        },
+        Err(error) => {
+            println!("Error creating token: {}", error);
+            Err(AuthError::TokenCreation)
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
