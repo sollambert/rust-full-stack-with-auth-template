@@ -21,7 +21,7 @@ static KEYS: Lazy<Keys> = Lazy::new(|| {
 });
 
 static TOKEN_LIFETIME: Lazy<u64> = Lazy::new(|| {
-    u64::from_str_radix(env::var("JWT_EXPIRE").unwrap().as_str(), 10).unwrap()
+    u64::from_str_radix(env::var("JWT_EXPIRE").expect("JWT_EXPIRE must be configured").as_str(), 10).expect("Cannot parse JWT_EXPIRE as u64")
 });
 
 struct Keys {
@@ -92,7 +92,7 @@ pub fn generate_new_token(uuid: String) -> AuthToken {
         exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME
     };
     AuthToken::new(encode(&Header::default(), &claims, &KEYS.encoding)
-        .map_err(|_| AuthError::TokenCreation).unwrap())
+        .unwrap_or_default())
 }
 
 #[derive(Debug, Serialize, Deserialize)]

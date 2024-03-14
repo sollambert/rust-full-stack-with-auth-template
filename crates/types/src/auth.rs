@@ -18,4 +18,10 @@ impl AuthToken {
         string.push_str((" ".to_owned() + self.access_token.as_str()).as_str());
         string
     }
+    pub fn default() -> Self {
+        Self {
+            access_token: String::new(),
+            token_type: String::new()
+        }
+    }
 }

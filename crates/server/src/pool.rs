@@ -65,7 +65,10 @@ async fn init_pool(database_url: String) {
         .max_connections(100)
         .idle_timeout(Some(Duration::from_millis(1000)))
         .connect(&database_url).await {
-            Ok(pool) => pool,
+            Ok(pool) => {
+                println!("Created SQL pool from DB url");
+                pool
+            },
             Err(error) => {
                 panic!("Could not create pool: {}", error);
             }
@@ -79,7 +82,10 @@ async fn init_pool(database_url: String) {
         .max_connections(100)
         .idle_timeout(Some(Duration::from_millis(1000)))
         .connect(&database_url).await {
-            Ok(pool) => pool,
+            Ok(pool) => {
+                println!("Created postgresql pool");
+                pool
+            },
             Err(error) => {
                 panic!("Could not create pool: {}", error);
             }
@@ -93,7 +99,10 @@ async fn init_pool(database_url: String) {
         .max_connections(100)
         .idle_timeout(Some(Duration::from_millis(1000)))
         .connect(&database_url).await {
-            Ok(pool) => pool,
+            Ok(pool) => {
+                println!("Created sqlite pool");
+                pool
+            },
             Err(error) => {
                 panic!("Could not create pool: {}", error);
             }
