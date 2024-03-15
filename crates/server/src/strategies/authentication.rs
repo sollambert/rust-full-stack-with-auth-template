@@ -8,7 +8,7 @@ use axum::{
     }, extract::FromRequestParts, async_trait, body::Body
 };
 use axum_extra::{headers::{Authorization, authorization::Bearer}, TypedHeader};
-use jsonwebtoken::{EncodingKey, DecodingKey, Validation, decode, encode, Header};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -16,7 +16,7 @@ use types::auth::AuthToken;
 
 // Keys for encoding/decoding authorization tokens with JWT_SECRET
 static KEYS: Lazy<Keys> = Lazy::new(|| {
-    let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be configured.");
+    let secret = std::env::var("AUTH_TOKEN_SECRET").expect("AUTH_TOKEN_SECRET must be configured.");
     Keys::new(secret.as_bytes())
 });
 
@@ -47,6 +47,84 @@ impl Keys {
 }
 
 /**
+ * Generate a new token and return it as AuthToken object
+ */
+pub fn generate_auth_token(uuid: String) -> Result<AuthToken, AuthError> {
+    let auth_claims = AuthClaims {
+        sub: uuid,
+        // issuer domain
+        aud: env::var("COMPANY_DOMAIN").unwrap(),
+        // issuer company
+        com: env::var("COMPANY_NAME").unwrap(),
+        iat: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
+        // expiration timestamp from unix epoch
+        exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME,
+        acc: 0
+    };
+    match encode(&Header::default(), &auth_claims, &KEYS.encoding) {
+        Ok(encoded_string) => {
+            Ok(AuthToken::new(encoded_string))
+        },
+        Err(error) => {
+            println!("Error creating token: {}", error);
+            Err(AuthError::TokenCreation)
+        }
+    }
+}
+
+
+/**
+ * Generate a new token and return it as AuthToken object
+ */
+pub fn generate_requester_token(uuid: String) -> Result<AuthToken, AuthError> {
+    let auth_claims = AuthRequesterClaims {
+        sub: uuid,
+        // issuer domain
+        aud: env::var("COMPANY_DOMAIN").unwrap(),
+        // issuer company
+        com: env::var("COMPANY_NAME").unwrap(),
+        iat: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
+        // expiration timestamp from unix epoch
+        exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME
+    };
+    println!("{:?}", auth_claims);
+    match encode(&Header::default(), &auth_claims, &KEYS.encoding) {
+        Ok(encoded_string) => {
+            Ok(AuthToken::new(encoded_string))
+        },
+        Err(error) => {
+            println!("Error creating token: {}", error);
+            Err(AuthError::TokenCreation)
+        }
+    }
+}
+
+pub trait Claims {
+    fn validate(&self) -> Result<(), AuthError>;
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthClaims {
+    pub aud: String,
+    pub com: String,
+    pub sub: String,
+    pub iat: u64,
+    pub exp: u64,
+    pub acc: u64
+}
+
+impl Claims for AuthClaims {
+    fn validate(&self) -> Result<(), AuthError> {
+        // iat validation
+        let lifetime = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - self.iat;
+        if lifetime > *TOKEN_LIFETIME {
+            return Err(AuthError::TokenExpired)
+        }
+        Ok(())
+    }
+}
+
+/**
  * Implement FromRequestParts trait for AuthClaims struct to allow extracting from request body
  */
 #[async_trait]
@@ -63,10 +141,72 @@ where
             .await
             .map_err(|_| AuthError::InvalidToken)?;
         // Decode the user data
-        let token_data = decode::<AuthClaims>(bearer.token(), &KEYS.decoding, &Validation::default())
+        let mut validation = Validation::new(Algorithm::HS256);
+        validation.set_audience(&[env::var("COMPANY_DOMAIN").unwrap()]);
+        let token_data = decode::<AuthClaims>(bearer.token(), &KEYS.decoding, &validation)
         .map_err(|_| AuthError::InvalidToken)?;
         Ok(token_data.claims)
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthRequesterClaims {
+    pub aud: String,
+    pub com: String,
+    pub sub: String,
+    pub iat: u64,
+    pub exp: u64
+}
+
+impl Claims for AuthRequesterClaims {
+    fn validate(&self) -> Result<(), AuthError> {
+        // iat validation
+        let lifetime = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - self.iat;
+        if lifetime > *TOKEN_LIFETIME {
+            return Err(AuthError::TokenExpired)
+        }
+        Ok(())
+    }
+}
+
+/**
+ * Implement FromRequestParts trait for AuthRequesterClaims struct to allow extracting from request body
+ */
+#[async_trait]
+impl<S> FromRequestParts<S> for AuthRequesterClaims
+where
+    S: Send + Sync,
+{
+    type Rejection = AuthError;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        // Extract the token from the authorization header
+        let TypedHeader(Authorization(bearer)) = parts
+            .extract::<TypedHeader<Authorization<Bearer>>>()
+            .await
+            .map_err(|error| {
+                println!("{}", error);
+                AuthError::InvalidToken
+            })?;
+        let mut validation = Validation::new(Algorithm::HS256);
+        validation.set_audience(&[env::var("COMPANY_DOMAIN").unwrap()]);
+        // Decode the user data
+        let token_data = decode::<AuthRequesterClaims>(bearer.token(), &KEYS.decoding, &validation)
+        .map_err(|error| {
+            println!("{}", error);
+            AuthError::InvalidToken
+        })?;
+        Ok(token_data.claims)
+    }
+}
+
+#[derive(Debug)]
+pub enum AuthError {
+    WrongCredentials,
+    MissingCredentials,
+    TokenCreation,
+    TokenExpired,
+    InvalidToken
 }
 
 impl IntoResponse for AuthError {
@@ -83,89 +223,4 @@ impl IntoResponse for AuthError {
         }));
         (status, body).into_response()
     }
-}
-
-/**
- * Generate a new token and return it as AuthToken object
- */
-pub fn generate_auth_token(uuid: String) -> Result<AuthToken, AuthError> {
-    let auth_claims = AuthClaims {
-        uuid,
-        // issuer domain
-        sub: env::var("JWT_SUB").unwrap(),
-        // issuer company
-        com: env::var("JWT_COMPANY").unwrap(),
-        iat: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
-        // expiration timestamp from unix epoch
-        exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME
-    };
-    match encode(&Header::default(), &auth_claims, &KEYS.encoding) {
-        Ok(encoded_string) => {
-            Ok(AuthToken::new(encoded_string))
-        },
-        Err(error) => {
-            println!("Error creating token: {}", error);
-            Err(AuthError::TokenCreation)
-        }
-    }
-}
-
-pub fn generate_requester_token(uuid: String) -> Result<AuthToken, AuthError> {
-    let auth_claims = AuthClaims {
-        uuid,
-        // issuer domain
-        sub: env::var("JWT_SUB").unwrap(),
-        // issuer company
-        com: env::var("JWT_COMPANY").unwrap(),
-        iat: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
-        // expiration timestamp from unix epoch
-        exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME
-    };
-    match encode(&Header::default(), &auth_claims, &KEYS.encoding) {
-        Ok(encoded_string) => {
-            Ok(AuthToken::new(encoded_string))
-        },
-        Err(error) => {
-            println!("Error creating token: {}", error);
-            Err(AuthError::TokenCreation)
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AuthClaims {
-    uuid: String,
-    sub: String,
-    com: String,
-    iat: u64,
-    exp: u64
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AuthRequesterClaims {
-    uuid: String,
-    sub: String,
-    com: String,
-    iat: u64,
-    exp: u64
-}
-
-impl AuthClaims {
-    pub fn validate(&self) -> Result<(), AuthError> {
-        // iat validation
-        let lifetime = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() - self.iat;
-        if lifetime > *TOKEN_LIFETIME {
-            return Err(AuthError::TokenExpired)
-        }
-        Ok(())
-    }
-}
-
-#[derive(Debug)]
-pub enum AuthError {
-    WrongCredentials,
-    MissingCredentials,
-    TokenCreation,
-    TokenExpired,
-    InvalidToken
 }

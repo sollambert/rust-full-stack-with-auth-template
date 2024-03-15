@@ -1,19 +1,20 @@
 use axum::{
-    http::StatusCode, middleware, routing::post, Json, Router
+    extract::Request, http::StatusCode, middleware, routing::post, Json, Router
 };
 use bcrypt::verify;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
-use types::{auth::AuthToken, user::{LoginUser, UserInfo}};
+use types::{auth::AuthToken, user::{LoginUser, RegisterUser, UserInfo}};
 
-use crate::{strategies::{users, authentication::{AuthError, generate_requester_token}}, middleware::token_authentication};
+use crate::{middleware::token_authentication, strategies::{authentication::{generate_auth_token, generate_requester_token, AuthError}, users}};
 
 // route function to nest endpoints in router
 pub fn routes() -> Router {
     // create routes
     Router::new()
-        .route("/protected", post(protected))
-        .layer(middleware::from_fn(token_authentication::authenticate_token))
+        .route("/request", post(request_auth_token))
+        .layer(middleware::from_fn(token_authentication::authenticate_requester_token))
         .route("/login", post(login_user))
+        .route("/register", post(register_user))
 }
 
 // example route for authentication protection, will be replaced with middleware
@@ -23,6 +24,25 @@ async fn protected() -> Result<String, AuthError> {
     Ok(format!(
         "Welcome to the protected area :)",
     ))
+}
+
+async fn request_auth_token(request: Request) -> Result<(StatusCode, HeaderMap), (StatusCode, AuthError)> {
+    let mut uuid: String = String::new();
+    request.headers().get("User-UUID").into_iter().for_each(|header| {
+        uuid = String::from(header.to_str().unwrap());
+    });
+    let token_result = generate_auth_token(uuid.clone());
+    let auth_token: AuthToken;
+    match token_result {
+        Ok(token) => auth_token = token,
+        Err(error) => {
+            println!("Error creating token for UUID {}: {:?}", uuid, error);
+            return Err((StatusCode::FORBIDDEN, error))
+        }
+    }
+    let mut header_map = HeaderMap::new();
+    header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
+    Ok((StatusCode::CREATED, header_map.clone()))
 }
 
 // route for logging in user with provided LoginUser json
@@ -64,5 +84,49 @@ async fn login_user(
     } else {
         // send 400 response with JSON response
             return Err((StatusCode::FORBIDDEN, AuthError::WrongCredentials));
+    }
+}
+
+
+// handler for creating a new user
+async fn register_user(
+    Json(payload): Json<RegisterUser>,
+) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), (StatusCode, AuthError)> {
+    // insert user into table
+    // if successful return a valid ResponseUser and 201 CREATED
+    // if unsuccessful return an empty ResponseUser object and a 400 BAD REQUEST
+    match users::insert_db_user(payload).await {
+        Ok(id) => {
+            // query to select user by given ID return by insert_user function
+            // then return populated ResponseUser with data from table
+            let result = users::get_db_user_by_id(id).await;
+            // check result for error and return error code if necessary
+            if let Err(_) = result {
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, AuthError::InvalidToken));
+            }
+            let user = result.unwrap();
+            // re-create user_info with populated fields
+            let user_info = UserInfo {
+                uuid: user.uuid,
+                email: user.email,
+                username: user.username
+            };
+            let token_result = generate_requester_token(user_info.uuid.clone());
+            let auth_token: AuthToken;
+            match token_result {
+                Ok(token) => auth_token = token,
+                Err(error) => {
+                    println!("Error creating token for UUID {}: {:?}", user_info.uuid, error);
+                    return Err((StatusCode::FORBIDDEN, error))
+                }
+            }
+            let mut header_map = HeaderMap::new();
+            header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
+            Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))
+        },
+        Err(_) => {
+            // send 500 SERVICE UNAVAILABLE with empty ResponseUser
+            return Err((StatusCode::SERVICE_UNAVAILABLE, AuthError::InvalidToken));
+        }
     }
 }
