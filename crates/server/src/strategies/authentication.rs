@@ -130,7 +130,7 @@ impl Claims for AuthClaims {
 #[async_trait]
 impl<S> FromRequestParts<S> for AuthClaims
 where
-    S: Send + Sync,
+    S: Sync,
 {
     type Rejection = AuthError;
 
@@ -175,7 +175,7 @@ impl Claims for AuthRequesterClaims {
 #[async_trait]
 impl<S> FromRequestParts<S> for AuthRequesterClaims
 where
-    S: Send + Sync,
+    S: Sync,
 {
     type Rejection = AuthError;
 
