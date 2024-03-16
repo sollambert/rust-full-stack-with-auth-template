@@ -5,25 +5,16 @@ use bcrypt::verify;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
 use types::{auth::AuthToken, user::{LoginUser, RegisterUser, UserInfo}};
 
-use crate::{middleware::token_authentication, strategies::{authentication::{generate_auth_token, generate_requester_token, AuthError}, users}};
+use crate::{middleware::token_authentication, strategies::{authentication::{AuthClaims, AuthError, AuthRequesterClaims, Claims}, users}};
 
 // route function to nest endpoints in router
 pub fn routes() -> Router {
     // create routes
     Router::new()
         .route("/request", post(request_auth_token))
-        .layer(middleware::from_fn(token_authentication::authenticate_requester_token))
+        .layer(middleware::from_fn(token_authentication::authenticate_requester_token::<AuthRequesterClaims>))
         .route("/login", post(login_user))
         .route("/register", post(register_user))
-}
-
-// example route for authentication protection, will be replaced with middleware
-// right now, authentication is only required for routes that extract the Claims object from a requests decoded Bearer token
-async fn protected() -> Result<String, AuthError> {
-    // Send the protected data to the user
-    Ok(format!(
-        "Welcome to the protected area :)",
-    ))
 }
 
 async fn request_auth_token(request: Request) -> Result<(StatusCode, HeaderMap), (StatusCode, AuthError)> {
@@ -31,7 +22,7 @@ async fn request_auth_token(request: Request) -> Result<(StatusCode, HeaderMap),
     request.headers().get("User-UUID").into_iter().for_each(|header| {
         uuid = String::from(header.to_str().unwrap());
     });
-    let token_result = generate_auth_token(uuid.clone());
+    let token_result = AuthClaims::new(uuid.clone()).generate_token();
     let auth_token: AuthToken;
     match token_result {
         Ok(token) => auth_token = token,
@@ -69,7 +60,7 @@ async fn login_user(
             username: user.username,
             email: user.email
         };
-        let token_result = generate_requester_token(user_info.uuid.clone());
+        let token_result = AuthRequesterClaims::new(user_info.uuid.clone()).generate_token();
         let auth_token: AuthToken;
         match token_result {
             Ok(token) => auth_token = token,
@@ -111,7 +102,7 @@ async fn register_user(
                 email: user.email,
                 username: user.username
             };
-            let token_result = generate_requester_token(user_info.uuid.clone());
+            let token_result = AuthRequesterClaims::new(user_info.uuid.clone()).generate_token();
             let auth_token: AuthToken;
             match token_result {
                 Ok(token) => auth_token = token,

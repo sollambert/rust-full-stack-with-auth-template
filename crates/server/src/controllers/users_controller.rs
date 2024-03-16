@@ -1,13 +1,10 @@
 use axum::{
     http::StatusCode,
-    routing::{get, post},
+    routing::get,
     Json,Router
 };
 
-use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
-use types::{auth::AuthToken, user::{RegisterUser, UserInfo}};
-
-use crate::strategies::{authentication::{generate_requester_token, AuthError}, users};
+use types::user::UserInfo;
 
 // route function to nest endpoints in router
 pub fn routes() -> Router {
