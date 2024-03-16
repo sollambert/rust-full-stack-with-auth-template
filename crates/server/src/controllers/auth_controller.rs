@@ -1,5 +1,5 @@
 use axum::{
-    extract::Request, http::StatusCode, middleware, routing::post, Json, Router
+    extract::Request, http::StatusCode, middleware, routing::{get, post}, Json, Router
 };
 use bcrypt::verify;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
@@ -11,10 +11,16 @@ use crate::{middleware::token_authentication, strategies::{authentication::{Auth
 pub fn routes() -> Router {
     // create routes
     Router::new()
+        .route("/test", get(test_auth_route))
+        .layer(middleware::from_fn(token_authentication::authenticate_token::<AuthClaims>))
         .route("/request", post(request_auth_token))
-        .layer(middleware::from_fn(token_authentication::authenticate_requester_token::<AuthRequesterClaims>))
+        .layer(middleware::from_fn(token_authentication::authenticate_token::<AuthRequesterClaims>))
         .route("/login", post(login_user))
         .route("/register", post(register_user))
+}
+
+async fn test_auth_route(_request: Request) -> Result<(StatusCode, String), (StatusCode, AuthError)> {
+    Ok((StatusCode::OK, "Auth verified".to_string()))
 }
 
 async fn request_auth_token(request: Request) -> Result<(StatusCode, HeaderMap), (StatusCode, AuthError)> {

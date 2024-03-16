@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use gloo_console::error;
+use gloo_console::{error, log};
 
 use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION}, Method, Request, Response, StatusCode, Url};
 use types::user::{LoginUser, RegisterUser, UserInfo};
@@ -28,14 +28,36 @@ impl Middleware for AuthMiddleware {
         if auth_requester_token_result.is_ok() {
             request_auth_token().await.unwrap();
         }
-        let auth_token = AuthStorage::get_auth_token().unwrap();
+        let auth_token = AuthStorage::get_auth_token().unwrap_or_default();
         req.headers_mut().append(AUTHORIZATION, HeaderValue::from_str(auth_token.to_string().as_str()).unwrap());
         next.run(req, extensions).await
     }
 }
 
+pub async fn test_auth_route() -> Result<StatusCode, StatusCode> {
+    let response = get_http_auth_client().get("http://localhost:3001/auth/test").send().await;
+    match response {
+        Ok(data) => {
+            let status = data.status().clone();
+            match data.text().await {
+                Ok(text) => {
+                    log!(format!("{}", text));
+                    Ok(status)
+                },
+                Err(_error) => {
+                    Err(status)
+                }
+            }
+        },
+        Err(error) => {
+            error!("Error with request: {}", error.to_string());
+            Err(error.status().unwrap())
+        }
+    }
+}
+
 pub async fn request_auth_token() -> Result<StatusCode, StatusCode> {
-    let auth_token = AuthStorage::get_auth_token().unwrap();
+    let auth_token = AuthStorage::get_requester_token().unwrap();
     let mut header_map = HeaderMap::new();
     header_map.insert(AUTHORIZATION, HeaderValue::from_str(auth_token.to_string().as_str()).unwrap());
     let request_builder = get_http_client().request(Method::POST, Url::from_str("http://localhost:3001/auth/request").unwrap())

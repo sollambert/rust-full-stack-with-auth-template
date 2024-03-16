@@ -1,5 +1,6 @@
 pub mod auth;
 
+use gloo_console::error;
 use gloo_net::http::Request;
 use tauri_sys::tauri::invoke;
 use yew::prelude::*;
@@ -8,7 +9,7 @@ use yew_hooks::prelude::*;
 // use gloo_console::log;
 
 use types::user::UserInfo;
-use crate::{app::auth::registerform::RegisterForm, components::button::Button};
+use crate::{app::auth::registerform::RegisterForm, components::button::Button, services};
 
 
 #[derive(Default, PartialEq, Store)]
@@ -113,6 +114,29 @@ pub fn app() -> Html {
             ws.open();
         })
     };
+
+    let handle_test = {
+        use_async(async move {
+            let response = services::auth::test_auth_route().await;
+            match response {
+                Ok(status_code) => {
+                    Ok(status_code)
+                },
+                Err(error) => {
+                    error!("No response found: {}", error.to_string());
+                    Err(error)
+                }
+            }
+        })
+    };
+
+    let test_onclick = {
+        let handle_test = handle_test.clone();
+        Callback::from(move |_| {
+            handle_test.run();
+        })
+    };
+
     html! {
         <>
             <p class="space-x-4 m-4">
@@ -140,6 +164,9 @@ pub fn app() -> Html {
             <p class="space-x-4 m-4">
                 <Button onclick={onopen} label={"Connect to backend websocket"} disabled={*ws.ready_state != UseWebSocketReadyState::Closed} />
                 <Button onclick={onclick2} label={"Send to backend websocket"} disabled={*ws.ready_state != UseWebSocketReadyState::Open} />
+            </p>
+            <p class="space-x-4 m-4">
+                <Button onclick={test_onclick} label={"Test Auth"} />
             </p>
             {
                 for history.current().iter().map(|message| {

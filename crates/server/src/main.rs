@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, path::PathBuf};
 
 use axum::Router;
-use http::HeaderValue;
+use http::{header::{AUTHORIZATION, CONTENT_TYPE}, HeaderValue};
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 
@@ -32,6 +32,7 @@ async fn main() {
         .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap())
         .allow_origin("http://127.0.0.1:3001".parse::<HeaderValue>().unwrap())
         .allow_origin("http://127.0.0.1:8080".parse::<HeaderValue>().unwrap())
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE])
         .expose_headers(Any);
 
     let app = Router::new()
