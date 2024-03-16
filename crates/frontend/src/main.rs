@@ -6,7 +6,7 @@ mod services;
 use crate::app::App;
 
 fn main() {
-    services::create_http_client();
+    services::create_http_clients();
     wasm_logger::init(wasm_logger::Config::default());
     yew::Renderer::<App>::new().render();
 }

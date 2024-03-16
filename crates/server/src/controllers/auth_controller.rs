@@ -3,9 +3,9 @@ use axum::{
 };
 use bcrypt::verify;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
-use types::{auth::{AuthError, AuthToken}, user::{LoginUser, RegisterUser, UserInfo}};
+use types::{auth::AuthToken, user::{LoginUser, RegisterUser, UserInfo}};
 
-use crate::{middleware::token_authentication, strategies::{authentication::{AuthClaims, AuthRequesterClaims, Claims}, users}};
+use crate::{middleware::token_authentication, strategies::{authentication::{AuthClaims, AuthError, AuthRequesterClaims, Claims}, users}};
 
 // route function to nest endpoints in router
 pub fn routes() -> Router {

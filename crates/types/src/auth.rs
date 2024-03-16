@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use axum::{Json, http::StatusCode, response::{IntoResponse, Response}, body::Body};
-use serde_json::json;
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct AuthToken {
     pub access_token: String,
     pub token_type: String
@@ -33,26 +30,5 @@ impl AuthToken {
             access_token: String::new(),
             token_type: String::new()
         }
-    }
-}
-
-#[derive(Debug)]
-pub enum AuthError {
-    WrongCredentials,
-    TokenCreation,
-    InvalidToken
-}
-
-impl IntoResponse for AuthError {
-    fn into_response(self) -> Response<Body> {
-        let (status, error_message) = match self {
-            AuthError::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
-            AuthError::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "Token creation error"),
-            AuthError::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token"),
-        };
-        let body = Json(json!({
-            "error": error_message,
-        }));
-        (status, body).into_response()
     }
 }

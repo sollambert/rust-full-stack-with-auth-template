@@ -8,7 +8,7 @@ use yew_hooks::prelude::*;
 // use gloo_console::log;
 
 use types::user::UserInfo;
-use crate::{app::auth::registerform::RegisterForm, components::button::Button, services};
+use crate::{app::auth::registerform::RegisterForm, components::button::Button};
 
 
 #[derive(Default, PartialEq, Store)]
