@@ -1,18 +1,11 @@
 use std::{env, time::{SystemTime, UNIX_EPOCH}};
 
-use axum::{
-    Json, RequestPartsExt, http::{
-        StatusCode, request::Parts
-    }, response::{
-        IntoResponse, Response
-    }, extract::FromRequestParts, async_trait, body::Body
-};
+use axum::{RequestPartsExt, http::request::Parts, extract::FromRequestParts, async_trait};
 use axum_extra::{headers::{Authorization, authorization::Bearer}, TypedHeader};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use types::auth::AuthToken;
+use types::auth::{AuthError, AuthToken};
 
 // Keys for encoding/decoding authorization tokens with JWT_SECRET
 static KEYS: Lazy<Keys> = Lazy::new(|| {
@@ -157,28 +150,5 @@ where
     type Rejection = AuthError;
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         claims_from_request::<AuthRequesterClaims>(parts).await
-    }
-}
-
-#[derive(Debug)]
-pub enum AuthError {
-    WrongCredentials,
-    TokenCreation,
-    TokenExpired,
-    InvalidToken
-}
-
-impl IntoResponse for AuthError {
-    fn into_response(self) -> Response<Body> {
-        let (status, error_message) = match self {
-            AuthError::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
-            AuthError::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "Token creation error"),
-            AuthError::TokenExpired => (StatusCode::BAD_REQUEST, "Token is expired"),
-            AuthError::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token"),
-        };
-        let body = Json(json!({
-            "error": error_message,
-        }));
-        (status, body).into_response()
     }
 }
