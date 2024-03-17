@@ -4,5 +4,6 @@ CREATE TABLE "users" (
     uuid VARCHAR(36) UNIQUE,
     username VARCHAR(24) UNIQUE,
     pass VARCHAR(60),
-    email VARCHAR(254) UNIQUE
+    email VARCHAR(254) UNIQUE,
+    perms INTEGER
 );

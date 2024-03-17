@@ -11,29 +11,30 @@ use crate::{middleware::token_authentication, strategies::{authentication::{Auth
 pub fn routes() -> Router {
     // create routes
     Router::new()
-        .route("/test", get(test_auth_route))
-        .layer(middleware::from_fn(token_authentication::authenticate_token::<AuthClaims>))
-        .route("/request", post(request_auth_token))
-        .layer(middleware::from_fn(token_authentication::authenticate_token::<AuthRequesterClaims>))
+        .nest("/test", Router::new()
+            .route("/", get(test_auth_route)))
+            .layer(middleware::from_fn(token_authentication::authenticate_token::<AuthClaims>))
+        .nest("/request", Router::new()
+            .route("/",get(request_auth_token))
+            .layer(middleware::from_fn(token_authentication::authenticate_token::<AuthRequesterClaims>)))
         .route("/login", post(login_user))
         .route("/register", post(register_user))
 }
 
-async fn test_auth_route(_request: Request) -> Result<(StatusCode, String), (StatusCode, AuthError)> {
+async fn test_auth_route(request: Request) -> Result<(StatusCode, String), (StatusCode, AuthError)> {
+    let claims = AuthClaims::from_header(request.headers()).await;
+    println!("Claims in route: {:?}", claims);
     Ok((StatusCode::OK, "Auth verified".to_string()))
 }
 
 async fn request_auth_token(request: Request) -> Result<(StatusCode, HeaderMap), (StatusCode, AuthError)> {
-    let mut uuid: String = String::new();
-    request.headers().get("User-UUID").into_iter().for_each(|header| {
-        uuid = String::from(header.to_str().unwrap());
-    });
-    let token_result = AuthClaims::new(uuid.clone()).generate_token();
+    let claims = AuthRequesterClaims::from_header(request.headers()).await;
+    let token_result = AuthClaims::new(claims.sub.clone()).await.unwrap().generate_token();
     let auth_token: AuthToken;
     match token_result {
         Ok(token) => auth_token = token,
         Err(error) => {
-            println!("Error creating token for UUID {}: {:?}", uuid, error);
+            println!("Error creating token for UUID {}: {:?}", claims.sub, error);
             return Err((StatusCode::FORBIDDEN, error))
         }
     }
@@ -54,25 +55,25 @@ async fn login_user(
     let result = users::get_db_user_by_username(payload.username).await;
     // if can't get user by username, return 400
     if let Err(_) = result {
-        return Err((StatusCode::FORBIDDEN, AuthError::WrongCredentials));
+        return Err((StatusCode::FORBIDDEN, AuthError::UserDoesNotExist));
     }
     // unwrap result from DB as user object
     let user = result.unwrap();
     // verify supplied password is validated
-    if verify(payload.pass, &user.pass).unwrap() {
+    if verify(payload.pass, &user.pass).is_ok() {
         // build response user
         let user_info = UserInfo {
             uuid: user.uuid,
             username: user.username,
             email: user.email
         };
-        let token_result = AuthRequesterClaims::new(user_info.uuid.clone()).generate_token();
+    let token_result = AuthClaims::new(user_info.uuid.clone()).await.unwrap().generate_token();
         let auth_token: AuthToken;
         match token_result {
             Ok(token) => auth_token = token,
             Err(error) => {
                 println!("Error creating token for UUID {}: {:?}", user_info.uuid, error);
-                return Err((StatusCode::FORBIDDEN, error))
+                return Err((StatusCode::UNAUTHORIZED, error))
             }
         }
         let mut header_map = HeaderMap::new();
@@ -80,7 +81,7 @@ async fn login_user(
         Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))
     } else {
         // send 400 response with JSON response
-            return Err((StatusCode::FORBIDDEN, AuthError::WrongCredentials));
+        return Err((StatusCode::UNAUTHORIZED, AuthError::WrongCredentials));
     }
 }
 
@@ -90,25 +91,15 @@ async fn register_user(
     Json(payload): Json<RegisterUser>,
 ) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), (StatusCode, AuthError)> {
     // insert user into table
-    // if successful return a valid ResponseUser and 201 CREATED
-    // if unsuccessful return an empty ResponseUser object and a 400 BAD REQUEST
     match users::insert_db_user(payload).await {
-        Ok(id) => {
-            // query to select user by given ID return by insert_user function
-            // then return populated ResponseUser with data from table
-            let result = users::get_db_user_by_id(id).await;
-            // check result for error and return error code if necessary
-            if let Err(_) = result {
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, AuthError::InvalidToken));
-            }
-            let user = result.unwrap();
+        Ok(user) => {
             // re-create user_info with populated fields
             let user_info = UserInfo {
-                uuid: user.uuid,
+                uuid: user.uuid.clone(),
                 email: user.email,
                 username: user.username
             };
-            let token_result = AuthRequesterClaims::new(user_info.uuid.clone()).generate_token();
+            let token_result = AuthClaims::new(user_info.uuid.clone()).await.unwrap().generate_token();
             let auth_token: AuthToken;
             match token_result {
                 Ok(token) => auth_token = token,
@@ -121,9 +112,12 @@ async fn register_user(
             header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
             Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))
         },
-        Err(_) => {
-            // send 500 SERVICE UNAVAILABLE with empty ResponseUser
-            return Err((StatusCode::SERVICE_UNAVAILABLE, AuthError::InvalidToken));
+        Err(error) => {
+            println!("Error creating user: {}", error);
+            if error.to_string().contains("duplicate key") {
+                return Err((StatusCode::BAD_REQUEST, AuthError::UserAlreadyExists))
+            }
+            Err((StatusCode::INTERNAL_SERVER_ERROR, AuthError::InvalidToken))
         }
     }
 }

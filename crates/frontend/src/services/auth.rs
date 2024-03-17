@@ -60,7 +60,7 @@ pub async fn request_auth_token() -> Result<StatusCode, StatusCode> {
     let auth_token = AuthStorage::get_requester_token().unwrap();
     let mut header_map = HeaderMap::new();
     header_map.insert(AUTHORIZATION, HeaderValue::from_str(auth_token.to_string().as_str()).unwrap());
-    let request_builder = get_http_client().request(Method::POST, Url::from_str("http://localhost:3001/auth/request").unwrap())
+    let request_builder = get_http_client().request(Method::GET, Url::from_str("http://localhost:3001/auth/request").unwrap())
         .headers(header_map);
     let response = request_builder.send().await;
     match response {

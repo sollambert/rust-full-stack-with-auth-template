@@ -23,6 +23,8 @@ serde_json = "1.0.114"
 http = "1.1.0"
 tower = "0.4.13"
 cookie = "0.18.0"
+struct_iterable = "0.1.1"
+base64 = "0.22.0"
 
 [features]
 sqlite = []
