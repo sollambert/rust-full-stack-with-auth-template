@@ -17,7 +17,7 @@ pub fn register_form() -> Html {
         let register_user = register_user.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            match register_user.assign_by_name(key, input.value()) {
+            match register_user.update_field(key, input.value()) {
                 Ok(new_register_user) => {
                     register_user.set(new_register_user);
                 }, Err(error) => {error!(error)}

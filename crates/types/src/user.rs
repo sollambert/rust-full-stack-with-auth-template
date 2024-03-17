@@ -45,7 +45,7 @@ impl fmt::Display for RegisterUser {
 }
 
 impl RegisterUser {
-    pub fn assign_by_name(&self, key: &str, value: String) -> Result<Self,String> {
+    pub fn update_field(&self, key: &str, value: String) -> Result<Self,String> {
         let mut new_self = self.clone();
         match key {
             "username" => new_self.username = value,
@@ -70,7 +70,7 @@ impl fmt::Display for LoginUser {
 }
 
 impl LoginUser {
-    pub fn assign_by_name(&self, key: &str, value: String) -> Result<Self,String> {
+    pub fn update_field(&self, key: &str, value: String) -> Result<Self,String> {
         let mut new_self = self.clone();
         match key {
             "username" => new_self.username = value,

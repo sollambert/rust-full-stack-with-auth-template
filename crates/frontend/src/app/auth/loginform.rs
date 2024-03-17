@@ -17,7 +17,7 @@ pub fn login_form() -> Html {
         let login_user = login_user.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            match login_user.assign_by_name(key, input.value()) {
+            match login_user.update_field(key, input.value()) {
                 Ok(new_login_user) => {
                     login_user.set(new_login_user);
                 }, Err(error) => {error!(error)}
