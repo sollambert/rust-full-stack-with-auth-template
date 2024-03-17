@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, path::PathBuf};
 
 use axum::Router;
-use http::{header::{AUTHORIZATION, CONTENT_TYPE}, HeaderValue};
+use http::header::{AUTHORIZATION, CONTENT_TYPE};
 use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 
@@ -28,10 +28,7 @@ async fn main() {
     pool::create_pool().await;
 
     let cors = CorsLayer::permissive()
-        .allow_origin("http://localhost:3001".parse::<HeaderValue>().unwrap())
-        .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap())
-        .allow_origin("http://127.0.0.1:3001".parse::<HeaderValue>().unwrap())
-        .allow_origin("http://127.0.0.1:8080".parse::<HeaderValue>().unwrap())
+        .allow_origin(Any)
         .allow_headers([AUTHORIZATION, CONTENT_TYPE])
         .expose_headers(Any);
 
@@ -44,7 +41,7 @@ async fn main() {
             .layer(cors));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3001));
-    println!("Server listening on {}", addr);
+    println!("Server listening on http://{}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     match axum::serve(listener, app).await {
         Ok(_) => {},
