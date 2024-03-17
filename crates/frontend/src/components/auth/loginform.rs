@@ -6,7 +6,7 @@ use yew_hooks::use_async;
 
 use yewdux::prelude::*;
 
-use crate::{services, app::UserState, components::{button::Button, input::Input}};
+use crate::{services, app::UserState, components::{buttons::button::Button, input::Input}};
 
 #[function_component(LoginForm)]
 pub fn login_form() -> Html {

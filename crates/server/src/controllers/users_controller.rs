@@ -16,8 +16,8 @@ pub fn routes() -> Router {
 //default route
 async fn default_user() -> (StatusCode, Json<UserInfo>) {
     return (StatusCode::OK, Json(UserInfo {
-        uuid: "".to_owned(),
-        username: "".to_owned(),
-        email: "".to_owned()
+        uuid: "Empty user".to_owned(),
+        username: "Empty user".to_owned(),
+        email: "Empty user".to_owned()
     }));
 }

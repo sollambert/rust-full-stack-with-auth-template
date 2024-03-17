@@ -2,6 +2,7 @@ mod app;
 mod components;
 mod hooks;
 mod services;
+mod views;
 
 use crate::app::App;
 

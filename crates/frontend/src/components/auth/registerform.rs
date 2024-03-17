@@ -6,7 +6,7 @@ use gloo_console::error;
 use yew_router::history::{History, HashHistory};
 use yewdux::prelude::*;
 
-use crate::{services, app::UserState, components::{button::Button, input::Input}};
+use crate::{services, app::UserState, components::{buttons::button::Button, input::Input}};
 
 #[function_component(RegisterForm)]
 pub fn register_form() -> Html {
@@ -33,10 +33,10 @@ pub fn register_form() -> Html {
                 Ok(user_info) => {
                     user_dispatch.set(UserState {user_info: user_info.clone()});
                     register_user.set(RegisterUser::default());
+                    HashHistory::new().push("/login");
                     Ok(user_info)
                 },
                 Err(error) => {
-                    HashHistory::new().push("/login");
                     Err(error)
                 }
             }
