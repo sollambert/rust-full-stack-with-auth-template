@@ -7,7 +7,10 @@ pub fn header() -> Html {
     html! {
         <header class="flex flex-row bg-slate-900 justify-between justify-items-center">
             <NavButton label="Home" destination="/"/>
-            <NavButton label="Login" destination="/login"/>
+            <div class="flex flex-row">
+                <NavButton label="Login" destination="/login"/>
+                <NavButton label="Register" destination="/register"/>
+            </div>
         </header>
     }
 }

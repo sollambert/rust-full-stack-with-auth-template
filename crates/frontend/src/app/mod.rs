@@ -3,7 +3,7 @@ use yewdux::prelude::*;
 use yew_router::prelude::*;
 use types::user::UserInfo;
 
-use crate::{components::{footer::Footer, header::Header}, views::{home::Home, login::Login, register::Register}};
+use crate::{components::{footer::Footer, header::Header}, views::{home::Home, login::Login, notfound::NotFound, register::Register}};
 
 
 #[derive(Default, PartialEq, Store)]
@@ -30,7 +30,7 @@ pub fn switch(route: AppRoute) -> Html {
         AppRoute::Login => html! {<Login />},
         AppRoute::Register => html! {<Register />},
         AppRoute::Home => html! {<Home />},
-        AppRoute::NotFound => html! { "Page not found" },
+        AppRoute::NotFound => html! { <NotFound /> },
     }
 }
 
