@@ -9,14 +9,13 @@ use yew_hooks::prelude::*;
 // use gloo_console::log;
 
 use types::user::UserInfo;
-use crate::{app::auth::registerform::RegisterForm, components::button::Button, services};
+use crate::{app::auth::{registerform::RegisterForm, loginform::LoginForm}, components::button::Button, services};
 
 
 #[derive(Default, PartialEq, Store)]
 struct UserState {
     user_info: UserInfo
 }
-
 
 #[function_component(App)]
 pub fn app() -> Html {
@@ -175,7 +174,10 @@ pub fn app() -> Html {
                     }
                 })
             }
-            <RegisterForm />
+            <div class="flex flex-row">
+                <RegisterForm />
+                <LoginForm />
+            </div>
         </>
     }
 }

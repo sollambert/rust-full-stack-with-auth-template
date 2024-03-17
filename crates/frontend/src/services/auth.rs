@@ -72,15 +72,19 @@ pub async fn request_auth_token() -> Result<StatusCode, StatusCode> {
     match response {
         Ok(data) => {
             let status = data.status();
-            let headers = data.headers();
-            match headers.get(AUTHORIZATION) {
-                Some(header) => {
-                    AuthStorage::new(header.to_str().unwrap()).store_auth_token();
-                    Ok(status)
-                },
-                None => {
-                    Err(StatusCode::NO_CONTENT)
+            if status.is_success() {
+                let headers = data.headers();
+                match headers.get(AUTHORIZATION) {
+                    Some(header) => {
+                        AuthStorage::new(header.to_str().unwrap()).store_auth_token();
+                        Ok(status)
+                    },
+                    None => {
+                        Err(StatusCode::NO_CONTENT)
+                    }
                 }
+            } else {
+                Err(status)
             }
         },
         Err(error) => {
@@ -102,18 +106,22 @@ pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
     match response {
         Ok(data) => {
             let status = data.status();
-            let headers = data.headers();
-            headers.get_all(AUTHORIZATION).into_iter().for_each(|header| {
-                AuthStorage::new(header.to_str().unwrap()).store_requester_token();
-            });
-            match data.json::<UserInfo>().await {
-                Ok(auth_body) => {
-                    Ok(auth_body)
-                },
-                Err(error) => {
-                    error!("Error parsing body: {}", error.to_string());
-                    Err(status)
+            if status.is_success() {
+                let headers = data.headers();
+                headers.get_all(AUTHORIZATION).into_iter().for_each(|header| {
+                    AuthStorage::new(header.to_str().unwrap()).store_requester_token();
+                });
+                match data.json::<UserInfo>().await {
+                    Ok(auth_body) => {
+                        Ok(auth_body)
+                    },
+                    Err(error) => {
+                        error!("Error parsing body: {}", error.to_string());
+                        Err(status)
+                    }
                 }
+            } else {
+                Err(status)
             }
         },
         Err(error) => {
@@ -128,18 +136,22 @@ pub async fn login_user(user: LoginUser) -> Result<UserInfo, StatusCode>  {
     match response {
         Ok(data) => {
             let status = data.status();
-            let headers = data.headers();
-            headers.get_all(AUTHORIZATION).into_iter().for_each(|header| {
-                AuthStorage::new(header.to_str().unwrap()).store_requester_token();
-            });
-            match data.json::<UserInfo>().await {
-                Ok(auth_body) => {
-                    Ok(auth_body)
-                },
-                Err(error) => {
-                    error!("Error parsing body: {}", error.to_string());
-                    Err(status)
+            if status.is_success() {
+                let headers = data.headers();
+                headers.get_all(AUTHORIZATION).into_iter().for_each(|header| {
+                    AuthStorage::new(header.to_str().unwrap()).store_requester_token();
+                });
+                match data.json::<UserInfo>().await {
+                    Ok(auth_body) => {
+                        Ok(auth_body)
+                    },
+                    Err(error) => {
+                        error!("Error parsing body: {}", error.to_string());
+                        Err(status)
+                    }
                 }
+            } else {
+                Err(status)
             }
         },
         Err(error) => {

@@ -1,4 +1,4 @@
-use gloo_console::{error};
+use gloo_console::error;
 use types::user::LoginUser;
 use web_sys::HtmlInputElement;
 use yew::{function_component, html, use_state, Callback, Html, InputEvent, SubmitEvent, TargetCast};
@@ -8,28 +8,20 @@ use yewdux::prelude::*;
 
 use crate::{services, app::UserState, components::{button::Button, input::Input}};
 
-#[function_component(RegisterForm)]
-pub fn register_form() -> Html {
-    let (user_state, user_dispatch) = use_store::<UserState>();
+#[function_component(LoginForm)]
+pub fn login_form() -> Html {
+    let (_user_state, user_dispatch) = use_store::<UserState>();
     let login_user = use_state(LoginUser::default);
 
-    let oninput_username = {
+    let oninput = |key| {
         let login_user = login_user.clone();
         Callback::from(move |e: InputEvent| {
-            let mut updated_user = (*login_user).clone();
             let input: HtmlInputElement = e.target_unchecked_into();
-            updated_user.username = input.value();
-            login_user.set(updated_user);
-        })
-    };
-
-    let oninput_pass = {
-        let login_user = login_user.clone();
-        Callback::from(move |e: InputEvent| {
-            let mut updated_user = (*login_user).clone();
-            let input: HtmlInputElement = e.target_unchecked_into();
-            updated_user.pass = input.value();
-            login_user.set(updated_user);
+            match login_user.assign_by_name(key, input.value()) {
+                Ok(new_login_user) => {
+                    login_user.set(new_login_user);
+                }, Err(error) => {error!(error)}
+            };
         })
     };
 
@@ -69,12 +61,10 @@ pub fn register_form() -> Html {
     html! {
         <>
             <div class="m-4">
-                <pre>{"UserInfo: \n"}{user_state.user_info.to_string()}</pre>
-                <br/>
                 <form class="flex flex-col w-64 h-64 space-y-2"
                     onsubmit={login_onsubmit}>
-                    <Input input_type="text" placeholder="Username" oninput={oninput_username} value={login_user.username.to_owned()} />
-                    <Input input_type="password" placeholder="Password" oninput={oninput_pass} value={login_user.pass.to_owned()} />
+                    <Input input_type="text" placeholder="Username" oninput={oninput.clone()("username")} value={login_user.username.to_owned()} />
+                    <Input input_type="password" placeholder="Password" oninput={oninput.clone()("pass")} value={login_user.pass.to_owned()} />
                     <Button onclick={login_onclick} label="Login" />
                 </form>
             </div>

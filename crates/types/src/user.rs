@@ -44,6 +44,19 @@ impl fmt::Display for RegisterUser {
     }
 }
 
+impl RegisterUser {
+    pub fn assign_by_name(&self, key: &str, value: String) -> Result<Self,String> {
+        let mut new_self = self.clone();
+        match key {
+            "username" => new_self.username = value,
+            "pass" => new_self.pass = value,
+            "email" => new_self.email = value,
+            _ => return Err(format!("Key not found: {}", key))
+        }
+        Ok(new_self)
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct LoginUser {
     pub username: String,
@@ -53,6 +66,18 @@ pub struct LoginUser {
 impl fmt::Display for LoginUser {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Username: {}\nPass: {}", self.username, self.pass)
+    }
+}
+
+impl LoginUser {
+    pub fn assign_by_name(&self, key: &str, value: String) -> Result<Self,String> {
+        let mut new_self = self.clone();
+        match key {
+            "username" => new_self.username = value,
+            "pass" => new_self.pass = value,
+            _ => return Err(format!("Key not found: {}", key))
+        }
+        Ok(new_self)
     }
 }
 
