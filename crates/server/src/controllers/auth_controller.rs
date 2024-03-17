@@ -67,7 +67,7 @@ async fn login_user(
             username: user.username,
             email: user.email
         };
-    let token_result = AuthClaims::new(user_info.uuid.clone()).await.unwrap().generate_token();
+    let token_result = AuthRequesterClaims::new(user_info.uuid.clone()).await.unwrap().generate_token();
         let auth_token: AuthToken;
         match token_result {
             Ok(token) => auth_token = token,
@@ -99,7 +99,7 @@ async fn register_user(
                 email: user.email,
                 username: user.username
             };
-            let token_result = AuthClaims::new(user_info.uuid.clone()).await.unwrap().generate_token();
+            let token_result = AuthRequesterClaims::new(user_info.uuid.clone()).await.unwrap().generate_token();
             let auth_token: AuthToken;
             match token_result {
                 Ok(token) => auth_token = token,

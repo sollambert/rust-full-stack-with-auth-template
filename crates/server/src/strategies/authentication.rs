@@ -1,5 +1,4 @@
-use std::{env, time::{SystemTime, UNIX_EPOCH}};
-
+use std::env;
 use axum::{async_trait, body::Body, extract::FromRequestParts, http::request::Parts, response::{IntoResponse, Response}, Json, RequestPartsExt};
 use axum_extra::{headers::{Authorization, authorization::Bearer}, TypedHeader};
 use http::{HeaderMap, StatusCode};
@@ -20,15 +19,19 @@ static KEYS: Lazy<Keys> = Lazy::new(|| {
 });
 
 static TOKEN_LIFETIME: Lazy<u64> = Lazy::new(|| {
-    u64::from_str_radix(env::var("AUTH_TOKEN_EXPIRE")
+    let length = u64::from_str_radix(env::var("AUTH_TOKEN_EXPIRE")
         .expect("AUTH_TOKEN_EXPIRE must be configured").as_str(), 10)
-        .expect("Cannot parse AUTH_TOKEN_EXPIRE as u64")
+        .expect("Cannot parse AUTH_TOKEN_EXPIRE as u64");
+    println!("Auth token length: {}", length);
+    length
 });
 
 static TOKEN_REQUESTER_LIFETIME: Lazy<u64> = Lazy::new(|| {
-    u64::from_str_radix(env::var("AUTH_REQUEST_TOKEN_EXPIRE")
+    let length = u64::from_str_radix(env::var("AUTH_REQUEST_TOKEN_EXPIRE")
         .expect("AUTH_REQUEST_TOKEN_EXPIRE must be configured").as_str(), 10)
-        .expect("Cannot parse AUTH_REQUEST_TOKEN_EXPIRE as u64")
+        .expect("Cannot parse AUTH_REQUEST_TOKEN_EXPIRE as u64");
+    println!("Request token length: {}", length);
+    length
 });
 
 struct Keys {
@@ -69,7 +72,7 @@ pub trait Claims {
 async fn from_header<T>(headers: &HeaderMap) -> T
 where T: Claims, T: for<'de> Deserialize<'de> {
     let value = headers.get("X-Claims").unwrap();
-    return serde_json::from_str(&String::from_utf8(BASE64_STANDARD.decode(value.to_str().unwrap()).unwrap()).unwrap()).unwrap();
+    return serde_json::from_str(&String::from_utf8(BASE64_STANDARD.decode(value).unwrap()).unwrap()).unwrap();
 }
 
 async fn claims_from_request<T>(parts: &mut Parts) -> Result<T, AuthError>
@@ -81,6 +84,7 @@ where T: for<'de> Deserialize<'de> {
         .map_err(|_| AuthError::InvalidToken)?;
     // Build validation strategy
     let mut validation = Validation::new(Algorithm::HS256);
+    validation.leeway = 5;
     validation.set_audience(&[env::var("COMPANY_DOMAIN").unwrap()]);
     validation.set_issuer(&[env::var("COMPANY_NAME").unwrap()]);
     // Decode the user data
@@ -101,6 +105,7 @@ pub struct AuthClaims {
 
 impl Claims for AuthClaims {
     fn default() -> AuthClaims {
+        println!("Generated token with {} life", *TOKEN_LIFETIME);
         Self {
             // user uuid
             sub: String::new(),
@@ -109,12 +114,13 @@ impl Claims for AuthClaims {
             // issuer company
             com: env::var("COMPANY_NAME").unwrap(),
             // expiration timestamp from unix epoch
-            exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME,
+                exp: jsonwebtoken::get_current_timestamp() + *TOKEN_LIFETIME,
             // access level
             acc: 0
         }
     }
     async fn new(uuid: String) -> Result<AuthClaims, AuthError> {
+        println!("Generated token with {} life", *TOKEN_LIFETIME);
         match get_db_user_by_uuid(uuid).await {
             Ok(user) => Ok(Self {
                 // user uuid
@@ -124,7 +130,7 @@ impl Claims for AuthClaims {
                 // issuer company
                 com: env::var("COMPANY_NAME").unwrap(),
                 // expiration timestamp from unix epoch
-                exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_LIFETIME,
+                exp: jsonwebtoken::get_current_timestamp() + *TOKEN_LIFETIME,
                 // access level
                 acc: user.perms
             }),
@@ -160,6 +166,7 @@ pub struct AuthRequesterClaims {
 
 impl Claims for AuthRequesterClaims {
     fn default() -> AuthRequesterClaims {
+        println!("Generated token with {} life", *TOKEN_REQUESTER_LIFETIME);
         Self {
             // user uuid
             sub: String::new(),
@@ -168,11 +175,12 @@ impl Claims for AuthRequesterClaims {
             // issuer company
             com: env::var("COMPANY_NAME").unwrap(),
             // expiration timestamp from unix epoch
-            exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_REQUESTER_LIFETIME,
+            exp: jsonwebtoken::get_current_timestamp() + *TOKEN_REQUESTER_LIFETIME,
             // access level
         }
     }
     async fn new(uuid: String) -> Result<AuthRequesterClaims, AuthError> {
+        println!("Generated token with {} life", *TOKEN_REQUESTER_LIFETIME);
         Ok(Self {
             // user uuid
             sub: uuid,
@@ -181,7 +189,7 @@ impl Claims for AuthRequesterClaims {
             // issuer company
             com: env::var("COMPANY_NAME").unwrap(),
             // expiration timestamp from unix epoch
-            exp: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + *TOKEN_REQUESTER_LIFETIME
+            exp: jsonwebtoken::get_current_timestamp() + *TOKEN_REQUESTER_LIFETIME,
         })
     }
 }

@@ -22,7 +22,6 @@ where T: Claims,T: Serialize, T: Debug {
     while header_map.contains_key("X-Claims") {
         header_map.remove("X-Claims");
     }
-    println!("Claims in middleware: {:?}", claims);
     let json = json!(claims);
     let encoded_text = BASE64_STANDARD.encode(json.to_string());
     request.headers_mut().insert("X-Claims", HeaderValue::from_str(&encoded_text).unwrap());

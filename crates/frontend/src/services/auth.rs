@@ -26,7 +26,13 @@ impl Middleware for AuthMiddleware {
     ) -> reqwest_middleware::Result<Response> {
         let auth_requester_token_result = AuthStorage::get_requester_token();
         if auth_requester_token_result.is_ok() {
-            request_auth_token().await.unwrap();
+            match request_auth_token().await {
+                Ok(token) => token,
+                Err(error) => {
+                    error!(format!("{:?}", error));
+                    error
+                }
+            };
         }
         let auth_token = AuthStorage::get_auth_token().unwrap_or_default();
         req.headers_mut().append(AUTHORIZATION, HeaderValue::from_str(auth_token.to_string().as_str()).unwrap());

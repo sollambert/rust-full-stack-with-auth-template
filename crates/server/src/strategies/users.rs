@@ -5,14 +5,6 @@ use uuid::Uuid;
 
 use crate::pool;
 
-pub async fn get_db_user_by_id(id: i32) -> Result<User, sqlx::Error> {
-    // query for getting all data from users table where user row matches given user ID
-    sqlx::query_as::<_, User>(
-        "SELECT * FROM \"users\" WHERE id = $1;")
-    .bind(id)
-    .fetch_one(&pool::get_pool()).await
-}
-
 pub async fn get_db_user_by_username(username: String) -> Result<User, sqlx::Error> {
     // query for getting all data from users table where user row matches given user ID
     sqlx::query_as::<_, User>(
