@@ -18,20 +18,18 @@ static KEYS: Lazy<Keys> = Lazy::new(|| {
     Keys::new(secret.as_bytes())
 });
 
+// Auth token lifetime
 static TOKEN_LIFETIME: Lazy<u64> = Lazy::new(|| {
-    let length = u64::from_str_radix(env::var("AUTH_TOKEN_EXPIRE")
+    u64::from_str_radix(env::var("AUTH_TOKEN_EXPIRE")
         .expect("AUTH_TOKEN_EXPIRE must be configured").as_str(), 10)
-        .expect("Cannot parse AUTH_TOKEN_EXPIRE as u64");
-    println!("Auth token length: {}", length);
-    length
+        .expect("Cannot parse AUTH_TOKEN_EXPIRE as u64")
 });
 
+// Auth request token lifetime
 static TOKEN_REQUESTER_LIFETIME: Lazy<u64> = Lazy::new(|| {
-    let length = u64::from_str_radix(env::var("AUTH_REQUEST_TOKEN_EXPIRE")
+    u64::from_str_radix(env::var("AUTH_REQUEST_TOKEN_EXPIRE")
         .expect("AUTH_REQUEST_TOKEN_EXPIRE must be configured").as_str(), 10)
-        .expect("Cannot parse AUTH_REQUEST_TOKEN_EXPIRE as u64");
-    println!("Request token length: {}", length);
-    length
+        .expect("Cannot parse AUTH_REQUEST_TOKEN_EXPIRE as u64")
 });
 
 struct Keys {
@@ -48,9 +46,13 @@ impl Keys {
     }
 }
 
+// trait for JWT claims
 pub trait Claims {
+    // create empty claim
     fn default() -> Self;
+    // create claim from UUID
     async fn new(uuid: String) -> Result<Self, AuthError> where Self: Sized;
+    // generate AuthToken from Claims
     fn generate_token(&self) -> Result<AuthToken, AuthError>
     where Self: Serialize {
         match encode(&Header::default(), &self, &KEYS.encoding) {
@@ -63,18 +65,15 @@ pub trait Claims {
             }
         }
     }
-    async fn from_header(headers: &HeaderMap) -> Self
+    // generate claims from X-Claims header
+    fn from_header(headers: &HeaderMap) -> Self
     where Self: for<'de> Deserialize<'de> {
-        from_header::<Self>(headers).await
+        let value = headers.get("X-Claims").unwrap();
+        return serde_json::from_str(&String::from_utf8(BASE64_STANDARD.decode(value).unwrap()).unwrap()).unwrap();
     }
 }
 
-async fn from_header<T>(headers: &HeaderMap) -> T
-where T: Claims, T: for<'de> Deserialize<'de> {
-    let value = headers.get("X-Claims").unwrap();
-    return serde_json::from_str(&String::from_utf8(BASE64_STANDARD.decode(value).unwrap()).unwrap()).unwrap();
-}
-
+// build claims from request Authorization header
 async fn claims_from_request<T>(parts: &mut Parts) -> Result<T, AuthError>
 where T: for<'de> Deserialize<'de> {
     // Extract the token from the authorization header
@@ -105,7 +104,6 @@ pub struct AuthClaims {
 
 impl Claims for AuthClaims {
     fn default() -> AuthClaims {
-        println!("Generated token with {} life", *TOKEN_LIFETIME);
         Self {
             // user uuid
             sub: String::new(),
@@ -120,7 +118,6 @@ impl Claims for AuthClaims {
         }
     }
     async fn new(uuid: String) -> Result<AuthClaims, AuthError> {
-        println!("Generated token with {} life", *TOKEN_LIFETIME);
         match get_db_user_by_uuid(uuid).await {
             Ok(user) => Ok(Self {
                 // user uuid
@@ -166,7 +163,6 @@ pub struct AuthRequesterClaims {
 
 impl Claims for AuthRequesterClaims {
     fn default() -> AuthRequesterClaims {
-        println!("Generated token with {} life", *TOKEN_REQUESTER_LIFETIME);
         Self {
             // user uuid
             sub: String::new(),
@@ -180,7 +176,6 @@ impl Claims for AuthRequesterClaims {
         }
     }
     async fn new(uuid: String) -> Result<AuthRequesterClaims, AuthError> {
-        println!("Generated token with {} life", *TOKEN_REQUESTER_LIFETIME);
         Ok(Self {
             // user uuid
             sub: uuid,
@@ -214,7 +209,9 @@ pub enum AuthError {
     TokenCreation,
     UserAlreadyExists,
     UserDoesNotExist,
-    InvalidToken
+    InvalidToken,
+    BadRequest,
+    ServerError
 }
 
 impl IntoResponse for AuthError {
@@ -222,9 +219,11 @@ impl IntoResponse for AuthError {
         let (status, error_message) = match self {
             AuthError::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
             AuthError::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "Token creation error"),
-            AuthError::UserAlreadyExists => (StatusCode::INTERNAL_SERVER_ERROR, "Username and email must be unique"),
-            AuthError::UserDoesNotExist => (StatusCode::INTERNAL_SERVER_ERROR, "User does not exist"),
-            AuthError::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token")
+            AuthError::ServerError => (StatusCode::INTERNAL_SERVER_ERROR, "Server error"),
+            AuthError::UserAlreadyExists => (StatusCode::CONFLICT, "Username and email must be unique"),
+            AuthError::UserDoesNotExist => (StatusCode::NO_CONTENT, "User does not exist"),
+            AuthError::InvalidToken => (StatusCode::FORBIDDEN, "Invalid token"),
+            AuthError::BadRequest => (StatusCode::BAD_REQUEST, "Bad request")
         };
         let body = Json(json!({
             "error": error_message,
