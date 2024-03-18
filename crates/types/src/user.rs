@@ -95,3 +95,14 @@ impl fmt::Display for UserInfo {
         write!(f, "UUID: {}\nUsername: {}\nEmail: {}\nIs Admin: {}", self.uuid, self.username, self.email, self.is_admin)
     }
 }
+
+impl UserInfo {
+    pub fn new() -> Self {
+        Self {
+            uuid: String::new(),
+            username: String::new(),
+            email: String::new(),
+            is_admin: false
+        }
+    }
+}

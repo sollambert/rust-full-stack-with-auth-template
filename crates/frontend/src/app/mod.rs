@@ -3,7 +3,7 @@ use yewdux::prelude::*;
 use yew_router::prelude::*;
 use types::user::UserInfo;
 
-use crate::{components::{footer::Footer, header::Header}, views::{home::Home, login::Login, notfound::NotFound, register::Register}};
+use crate::{components::{footer::Footer, header::Header}, services, views::{home::Home, login::Login, notfound::NotFound, register::Register}};
 
 
 #[derive(Default, PartialEq, Store)]
@@ -42,6 +42,16 @@ pub fn switch(route: AppRoute) -> Html {
 
 #[function_component(App)]
 pub fn app() -> Html {
+    let (user_state, user_dispatch) = use_store::<UserState>();
+
+    use_effect(move || {
+        if user_state.user_info.uuid == String::new() {
+            yew::platform::spawn_local(async move {
+                let user_info = services::user::get_user_info().await;
+                user_dispatch.set(UserState {user_info});
+            });
+        }
+    });
 
     html! {
         <HashRouter>

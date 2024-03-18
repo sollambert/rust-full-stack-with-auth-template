@@ -1,4 +1,3 @@
-pub mod auth;
 use gloo_storage::{Storage, errors::StorageError};
 use once_cell::sync::OnceCell;
 use reqwest::Client;
@@ -6,6 +5,9 @@ use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use types::auth::AuthToken;
 
 use self::auth::AuthMiddleware;
+
+pub mod auth;
+pub mod user;
 
 static HTTP_CLIENT: OnceCell<Client> = OnceCell::new();
 static HTTP_CLIENT_WITH_AUTH: OnceCell<ClientWithMiddleware> = OnceCell::new();
