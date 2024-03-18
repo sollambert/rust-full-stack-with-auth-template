@@ -5,5 +5,5 @@ CREATE TABLE "users" (
     username VARCHAR(24) UNIQUE,
     pass VARCHAR(60),
     email VARCHAR(254) UNIQUE,
-    perms INTEGER
+    is_admin BOOLEAN
 );

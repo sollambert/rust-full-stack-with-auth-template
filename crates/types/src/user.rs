@@ -12,7 +12,7 @@ pub struct User {
     pub username: String,
     pub pass: String,
     pub email: String,
-    pub perms: i32
+    pub is_admin: bool
 }
 
 #[cfg(feature = "sqlx")]
@@ -23,10 +23,10 @@ impl <'r> FromRow<'r, AnyRow> for User {
         let username: String = row.try_get("username")?;
         let pass: String = row.try_get("pass")?;
         let email: String = row.try_get("email")?;
-        let perms: i32 = row.try_get("perms")?;
+        let is_admin: bool = row.try_get("is_admin")?;
 
         Ok(Self {
-            id, uuid, username, pass, email, perms
+            id, uuid, username, pass, email, is_admin
         })
     }
 }
@@ -86,11 +86,12 @@ impl LoginUser {
 pub struct UserInfo {
     pub uuid: String,
     pub username: String,
-    pub email: String
+    pub email: String,
+    pub is_admin: bool
 }
 
 impl fmt::Display for UserInfo {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "UUID: {}\nUsername: {}\nEmail: {}", self.uuid, self.username, self.email)
+        write!(f, "UUID: {}\nUsername: {}\nEmail: {}\nIs Admin: {}", self.uuid, self.username, self.email, self.is_admin)
     }
 }

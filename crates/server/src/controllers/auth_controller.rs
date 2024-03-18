@@ -74,7 +74,8 @@ async fn login_user(
         let user_info = UserInfo {
             uuid: user.uuid,
             username: user.username,
-            email: user.email
+            email: user.email,
+            is_admin: user.is_admin
         };
         // generate token from UserInfo uuid
         let token_result = AuthRequesterClaims::new(user_info.uuid.clone()).await.unwrap().generate_token();
@@ -118,7 +119,8 @@ async fn register_user(
     let user_info = UserInfo {
         uuid: user.uuid.clone(),
         email: user.email,
-        username: user.username
+        username: user.username,
+        is_admin: user.is_admin
     };
     // generate token from UserInfo uuid
     let token_result = AuthRequesterClaims::new(user_info.uuid.clone()).await.unwrap().generate_token();

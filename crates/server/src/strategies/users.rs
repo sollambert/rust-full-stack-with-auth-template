@@ -30,7 +30,7 @@ pub async fn insert_db_user(register_user: RegisterUser) -> Result<User, sqlx::E
     salt.copy_from_slice(&env::var("PASSWORD_SALT").unwrap().as_bytes()[0..16]);
     // perform query to insert new user with hashed password and bind all payload object fields
     sqlx::query_as::<_, User>(
-        "INSERT INTO \"users\" (uuid, username, pass, email, perms)
+        "INSERT INTO \"users\" (uuid, username, pass, email, is_admin)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING *;")
         .bind(id.to_string())
@@ -42,6 +42,6 @@ pub async fn insert_db_user(register_user: RegisterUser) -> Result<User, sqlx::E
             salt
         ).unwrap().to_string())
         .bind(register_user.email)
-        .bind(0)
+        .bind(false)
         .fetch_one(&pool::get_pool()).await
 }

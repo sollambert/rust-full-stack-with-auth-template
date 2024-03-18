@@ -99,7 +99,7 @@ pub struct AuthClaims {
     pub com: String,
     pub sub: String,
     pub exp: u64,
-    pub acc: i32
+    pub acc: bool
 }
 
 impl Claims for AuthClaims {
@@ -114,7 +114,7 @@ impl Claims for AuthClaims {
             // expiration timestamp from unix epoch
                 exp: jsonwebtoken::get_current_timestamp() + *TOKEN_LIFETIME,
             // access level
-            acc: 0
+            acc: false
         }
     }
     async fn new(uuid: String) -> Result<AuthClaims, AuthError> {
@@ -129,7 +129,7 @@ impl Claims for AuthClaims {
                 // expiration timestamp from unix epoch
                 exp: jsonwebtoken::get_current_timestamp() + *TOKEN_LIFETIME,
                 // access level
-                acc: user.perms
+                acc: user.is_admin
             }),
             Err(_) => {
                 Err(AuthError::TokenCreation)

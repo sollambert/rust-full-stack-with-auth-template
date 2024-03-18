@@ -25,6 +25,7 @@ tower = "0.4.13"
 cookie = "0.18.0"
 struct_iterable = "0.1.1"
 base64 = "0.22.0"
+email_address = "0.2.4"
 
 [features]
 sqlite = []

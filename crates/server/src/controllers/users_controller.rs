@@ -18,6 +18,7 @@ async fn default_user() -> (StatusCode, Json<UserInfo>) {
     return (StatusCode::OK, Json(UserInfo {
         uuid: "Empty user".to_owned(),
         username: "Empty user".to_owned(),
-        email: "Empty user".to_owned()
+        email: "Empty user".to_owned(),
+        is_admin: false
     }));
 }
