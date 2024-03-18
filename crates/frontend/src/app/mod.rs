@@ -14,12 +14,16 @@ pub struct UserState {
 /// App routes
 #[derive(Routable, Debug, Clone, PartialEq, Eq)]
 pub enum AppRoute {
+    #[at("/")]
+    Home,
+    #[at("/admin")]
+    AdminPanel,
+    #[at("/settings")]
+    SettingsPanel,
     #[at("/login")]
     Login,
     #[at("/register")]
     Register,
-    #[at("/")]
-    Home,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -27,9 +31,11 @@ pub enum AppRoute {
 
 pub fn switch(route: AppRoute) -> Html {
     match route {
+        AppRoute::Home => html! {<Home />},
+        AppRoute::AdminPanel => html! {<Home />},
+        AppRoute::SettingsPanel => html! {<Home />},
         AppRoute::Login => html! {<Login />},
         AppRoute::Register => html! {<Register />},
-        AppRoute::Home => html! {<Home />},
         AppRoute::NotFound => html! { <NotFound /> },
     }
 }
