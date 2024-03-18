@@ -3,8 +3,6 @@ use yew::prelude::*;
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
     pub value: String,
-    #[prop_or_default]
-    pub label: String,
     pub oninput: Callback<InputEvent>,
     #[prop_or_default]
     pub placeholder: String,
@@ -24,10 +22,7 @@ pub fn input(props: &Props) -> Html {
     });
     html! {
         <>
-            <label>{props.label}</label>
-            <input
-                    class="inline-flex items-center justify-center
-                        rounded-md text-sm font-medium ring-offset-background
+            <input class="rounded-md text-sm font-medium ring-offset-background
                         transition-colors focus-visible:outline-none
                         focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                         disabled:pointer-events-none disabled:opacity-50

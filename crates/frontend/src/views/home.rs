@@ -5,7 +5,7 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 
 use types::user::UserInfo;
-use crate::{components::{buttons::button::Button, auth::{registerform::RegisterForm, loginform::LoginForm}}, services};
+use crate::{components::{buttons::button::Button, user_info_panel::UserInfoPanel}, services};
 
 #[function_component(Home)]
 pub fn home() -> Html {
@@ -164,10 +164,9 @@ pub fn home() -> Html {
                     }
                 })
             }
-            <div class="flex flex-row">
-                <RegisterForm />
-                <LoginForm />
-            </div>
+            <p class="space-x-4 m-4">
+                <UserInfoPanel />
+            </p>
         </main>
     }
 }

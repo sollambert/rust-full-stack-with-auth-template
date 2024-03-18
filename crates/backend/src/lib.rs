@@ -40,7 +40,8 @@ async fn user_handler() -> impl IntoResponse {
     let user = UserInfo {
         uuid: "1".to_owned(),
         email: "test@test.com".to_owned(),
-        username: "Backend user".to_owned()
+        username: "Backend user".to_owned(),
+        is_admin: false
     };
 
     Json(user)

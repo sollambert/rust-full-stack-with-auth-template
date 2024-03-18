@@ -59,16 +59,11 @@ pub fn register_form() -> Html {
     };
 
     html! {
-        <>
-            <div class="m-4">
-                <form class="flex flex-col w-64 h-64 space-y-2"
-                    onsubmit={register_onsubmit}>
-                    <Input input_type="text" placeholder="Username" oninput={oninput("username")} value={register_user.username.to_owned()} />
-                    <Input input_type="password" placeholder="Password" oninput={oninput("pass")} value={register_user.pass.to_owned()} />
-                    <Input input_type="email" placeholder="Email" oninput={oninput("email")} value={register_user.email.to_owned()} />
-                    <Button onclick={register_onclick} label="Register" />
-                </form>
-            </div>
-        </>
+        <form class="flex flex-col w-64 h-48 space-y-2" onsubmit={register_onsubmit}>
+            <Input input_type="text" placeholder="Username" oninput={oninput("username")} value={register_user.username.to_owned()} />
+            <Input input_type="password" placeholder="Password" oninput={oninput("pass")} value={register_user.pass.to_owned()} />
+            <Input input_type="email" placeholder="Email" oninput={oninput("email")} value={register_user.email.to_owned()} />
+            <Button onclick={register_onclick} label="Register" />
+        </form>
     }
 }

@@ -4,6 +4,8 @@ use web_sys::HtmlInputElement;
 use yew::{function_component, html, use_state, Callback, Html, InputEvent, SubmitEvent, TargetCast};
 use yew_hooks::use_async;
 
+use yew_router::history::History;
+use yew_router::history::HashHistory;
 use yewdux::prelude::*;
 
 use crate::{services, app::UserState, components::{buttons::button::Button, input::Input}};
@@ -33,6 +35,7 @@ pub fn login_form() -> Html {
                 Ok(user_info) => {
                     user_dispatch.set(UserState {user_info: user_info.clone()});
                     login_user.set(LoginUser::default());
+                    HashHistory::new().push("/");
                     Ok(user_info)
                 },
                 Err(error) => {
@@ -59,15 +62,10 @@ pub fn login_form() -> Html {
     };
 
     html! {
-        <>
-            <div class="m-4">
-                <form class="flex flex-col w-64 h-64 space-y-2"
-                    onsubmit={login_onsubmit}>
-                    <Input input_type="text" placeholder="Username" oninput={oninput.clone()("username")} value={login_user.username.to_owned()} />
-                    <Input input_type="password" placeholder="Password" oninput={oninput.clone()("pass")} value={login_user.pass.to_owned()} />
-                    <Button onclick={login_onclick} label="Login" />
-                </form>
-            </div>
-        </>
+        <form class="flex flex-col w-64 h-48 space-y-2" onsubmit={login_onsubmit}>
+            <Input input_type="text" placeholder="Username" oninput={oninput.clone()("username")} value={login_user.username.to_owned()} />
+            <Input input_type="password" placeholder="Password" oninput={oninput.clone()("pass")} value={login_user.pass.to_owned()} />
+            <Button onclick={login_onclick} label="Login" />
+        </form>
     }
 }
