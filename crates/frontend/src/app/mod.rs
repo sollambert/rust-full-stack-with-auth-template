@@ -3,7 +3,7 @@ use yewdux::prelude::*;
 use yew_router::prelude::*;
 use types::user::UserInfo;
 
-use crate::{components::{footer::Footer, header::Header}, services, views::{home::Home, login::Login, notfound::NotFound, register::Register}};
+use crate::{components::{auth::{adminroute::AdminRoute, protectedroute::ProtectedRoute}, footer::Footer, header::Header}, services, views::{home::Home, login::Login, notfound::NotFound, register::Register}};
 
 
 #[derive(Default, PartialEq, Store)]
@@ -32,8 +32,8 @@ pub enum AppRoute {
 pub fn switch(route: AppRoute) -> Html {
     match route {
         AppRoute::Home => html! {<Home />},
-        AppRoute::AdminPanel => html! {<Home />},
-        AppRoute::SettingsPanel => html! {<Home />},
+        AppRoute::AdminPanel => html! {<AdminRoute children={html!{<Home/>}}/>},
+        AppRoute::SettingsPanel => html! {<ProtectedRoute children={html!{<Home/>}}/>},
         AppRoute::Login => html! {<Login />},
         AppRoute::Register => html! {<Register />},
         AppRoute::NotFound => html! { <NotFound /> },
