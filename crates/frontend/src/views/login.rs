@@ -4,7 +4,7 @@ use yew_router::history::HashHistory;
 use yewdux::functional::use_store;
 
 use crate::app::UserState;
-use crate::components::auth::loginform::LoginForm;
+use crate::components::auth::login_form::LoginForm;
 
 #[function_component(Login)]
 pub fn login() -> Html {

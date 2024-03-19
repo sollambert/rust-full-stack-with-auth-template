@@ -3,7 +3,7 @@ use yewdux::prelude::*;
 use yew_router::prelude::*;
 use types::user::UserInfo;
 
-use crate::{components::{auth::{adminroute::AdminRoute, protectedroute::ProtectedRoute}, footer::Footer, header::Header}, services, views::{home::Home, login::Login, notfound::NotFound, register::Register}};
+use crate::{components::{auth::{admin_route::AdminRoute, protected_route::ProtectedRoute}, footer::Footer, header::Header}, services, views::{admin_view::AdminView, home::Home, login::Login, not_found::NotFound, register::Register, user_view::UserView}};
 
 
 #[derive(Default, PartialEq, Store)]
@@ -12,14 +12,14 @@ pub struct UserState {
 }
 
 /// App routes
-#[derive(Routable, Debug, Clone, PartialEq, Eq, derive_more::From)]
+#[derive(Routable, Debug, Clone, PartialEq, Eq)]
 pub enum AppRoute {
     #[at("/")]
     Home,
     #[at("/admin")]
     AdminPanel,
     #[at("/settings")]
-    SettingsPanel,
+    UserPanel,
     #[at("/login")]
     Login,
     #[at("/register")]
@@ -32,8 +32,8 @@ pub enum AppRoute {
 pub fn switch(route: AppRoute) -> Html {
     match route {
         AppRoute::Home => html! {<Home />},
-        AppRoute::AdminPanel => html! {<AdminRoute><Home/></AdminRoute>},
-        AppRoute::SettingsPanel => html! {<ProtectedRoute><Home/></ProtectedRoute>},
+        AppRoute::AdminPanel => html! {<AdminRoute><AdminView /></AdminRoute>},
+        AppRoute::UserPanel => html! {<ProtectedRoute><UserView /></ProtectedRoute>},
         AppRoute::Login => html! {<Login />},
         AppRoute::Register => html! {<Register />},
         AppRoute::NotFound => html! { <NotFound /> },

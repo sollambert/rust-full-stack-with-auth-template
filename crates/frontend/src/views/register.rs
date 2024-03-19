@@ -4,7 +4,7 @@ use yew_router::history::HashHistory;
 use yewdux::functional::use_store;
 
 use crate::app::UserState;
-use crate::components::auth::registerform::RegisterForm;
+use crate::components::auth::register_form::RegisterForm;
 
 #[function_component(Register)]
 pub fn login() -> Html {

@@ -14,7 +14,7 @@ pub fn header() -> Html {
                     if user_state.user_info.is_admin {
                         <NavButton label="Admin" destination={AppRoute::AdminPanel} />
                     }
-                    <NavButton label={user_state.user_info.clone().username} destination={AppRoute::SettingsPanel} />
+                    <NavButton label={user_state.user_info.clone().username} destination={AppRoute::UserPanel} />
                 } else {
                         <NavButton label="Login" destination={AppRoute::Login} />
                         <NavButton label="Register" destination={AppRoute::Register} />

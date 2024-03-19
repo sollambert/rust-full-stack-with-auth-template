@@ -1,4 +1,4 @@
-pub mod loginform;
-pub mod registerform;
-pub mod adminroute;
-pub mod protectedroute;
+pub mod login_form;
+pub mod register_form;
+pub mod admin_route;
+pub mod protected_route;

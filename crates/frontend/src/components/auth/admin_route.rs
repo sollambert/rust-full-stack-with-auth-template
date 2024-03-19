@@ -1,4 +1,4 @@
-use yew::prelude::*;
+use yew::{html::ChildrenRenderer, prelude::*, virtual_dom::VNode};
 use yew_router::history::{History, HashHistory};
 use yewdux::functional::use_store;
 
