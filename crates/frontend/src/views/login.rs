@@ -19,11 +19,12 @@ pub fn login() -> Html {
     html! {
         <main class="flex flex-col items-center h-100">
             <LoginForm />
-            <a href="javascript::;" class="cursor-pointer text-blue-700 underline
-                    focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    onclick={move |_| {HashHistory::new().push("/register")}}>
+            <div tabindex={0} class="cursor-pointer text-blue-700 underline
+                    focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-3"
+                    onclick={move |_| {HashHistory::new().push("/register")}}
+                    onkeypress={move |e: KeyboardEvent| {if e.key() == "Enter" { HashHistory::new().push("/register")}}}>
                 {"Need an account?"}
-            </a>
+            </div>
         </main>
     }
 }

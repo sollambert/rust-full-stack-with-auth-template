@@ -15,7 +15,7 @@ pub fn user_view() -> Html {
     };
 
     html! {
-        <main class="flex flex-col items-center h-100">
+        <main class="flex flex-col items-center h-100 space-y-2">
             <UserInfoPanel />
             <Button label={"Logout"} onclick={logout_onclick} />
         </main>
