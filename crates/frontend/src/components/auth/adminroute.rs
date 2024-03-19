@@ -6,7 +6,7 @@ use crate::app::UserState;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
-    pub children: Html,
+    pub children: ChildrenRenderer<VNode>,
 }
 
 #[function_component(AdminRoute)]

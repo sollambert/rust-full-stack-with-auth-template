@@ -1,4 +1,4 @@
-use yew::prelude::*;
+use yew::{html::ChildrenRenderer, prelude::*, virtual_dom::VNode};
 use yew_router::history::{History, HashHistory};
 use yewdux::functional::use_store;
 
@@ -6,7 +6,7 @@ use crate::app::UserState;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
-    pub children: Html,
+    pub children: ChildrenRenderer<VNode>,
 }
 
 #[function_component(ProtectedRoute)]
