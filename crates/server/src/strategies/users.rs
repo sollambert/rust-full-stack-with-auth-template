@@ -5,11 +5,11 @@ use uuid::Uuid;
 
 use crate::pool;
 
-pub async fn get_db_user_by_username(username: String) -> Result<User, sqlx::Error> {
+pub async fn get_db_user_by_username_or_email(username_or_email: String) -> Result<User, sqlx::Error> {
     // query for getting all data from users table where user row matches given user ID
     sqlx::query_as::<_, User>(
-        "SELECT * FROM \"users\" WHERE username = $1;")
-    .bind(username)
+        "SELECT * FROM \"users\" WHERE username = $1 OR email = $1;")
+    .bind(username_or_email)
     .fetch_one(&pool::get_pool()).await
 }
 

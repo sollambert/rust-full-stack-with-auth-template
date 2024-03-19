@@ -61,7 +61,7 @@ async fn login_user(
         return Err(AuthError::WrongCredentials);
     }
     // get user by username from database
-    let result = users::get_db_user_by_username(payload.username).await;
+    let result = users::get_db_user_by_username_or_email(payload.username).await;
     // if can't get user by username, return 400
     if let Err(_) = result {
         return Err(AuthError::UserDoesNotExist);
