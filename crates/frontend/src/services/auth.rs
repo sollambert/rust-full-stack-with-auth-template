@@ -160,3 +160,7 @@ pub async fn login_user(user: LoginUser) -> Result<UserInfo, StatusCode>  {
         }
     }
 }
+
+pub fn logout_user() {
+    AuthStorage::clear();
+}

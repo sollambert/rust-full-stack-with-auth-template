@@ -39,6 +39,10 @@ impl <'a>AuthStorage<'a> {
     fn store(&self, token_key: &str) {
         gloo_storage::LocalStorage::set(token_key, &self.token_string).unwrap();
     }
+    fn clear() {
+        gloo_storage::LocalStorage::delete(Self::TOKEN_KEY);
+        gloo_storage::LocalStorage::delete(Self::REQUESTER_TOKEN_KEY);
+    }
     fn get(token_key: &str) -> Result<AuthToken, StorageError>  {
         match gloo_storage::LocalStorage::get(token_key) {
             Ok(token_string) => {
