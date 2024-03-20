@@ -8,6 +8,7 @@ use self::auth::AuthMiddleware;
 
 pub mod auth;
 pub mod user;
+pub mod web_socket;
 
 static HTTP_CLIENT: OnceCell<Client> = OnceCell::new();
 static HTTP_CLIENT_WITH_AUTH: OnceCell<ClientWithMiddleware> = OnceCell::new();
