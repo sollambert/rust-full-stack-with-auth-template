@@ -1,7 +1,8 @@
 use gloo_console::{error, log};
 use gloo_net::http::Request;
 use tauri_sys::tauri::invoke;
-use yew::prelude::*;
+use web_sys::WebSocket;
+use yew::{html::SendAsMessage, prelude::*};
 use yew_hooks::prelude::*;
 
 use types::user::UserInfo;
@@ -20,8 +21,6 @@ pub fn home() -> Html {
         },
         UseAsyncOptions::enable_auto(),
     );
-
-    let authenticated_chat = use_state(|| false);
 
     // Fetch data from backend.
     let state = {
@@ -81,32 +80,30 @@ pub fn home() -> Html {
         use_websocket_with_options(
             format!("ws://localhost:{}/ws", port),
             UseWebSocketOptions {
+                onopen: Some(Box::new(move |event| {
+                    let socket = event.target_dyn_into::<WebSocket>().unwrap();
+                    if let Ok(token) = AuthStorage::get_requester_token() {
+                        log!(format!("{}", token.access_token));
+                        socket.send_with_str(&token.access_token).unwrap();
+                    } else {
+                        socket.close().unwrap();
+                    }
+                })),
                 // Receive message by callback `onmessage`.
                 onmessage: Some(Box::new(move |message| {
-                    history.push(format!("ws [recv]: {}", message));
+                    history.push(format!("{}", message));
                 })),
                 manual: Some(true),
                 ..Default::default()
             },
         )
     };
+
     let onclick2 = {
         let ws = ws.clone();
-        let history = history.clone();
-        let authenticated_chat = authenticated_chat.clone();
         let message = "Hello, backend!";
         Callback::from(move |_| {
-            if *authenticated_chat {
                 ws.send(message.to_string());
-            } else {
-                if let Ok(token) = AuthStorage::get_requester_token() {
-                    ws.send(token.access_token + " " + message);
-                    authenticated_chat.set(true);
-                } else {
-                    ws.close();
-                }
-            }
-            history.push(format!("ws [send]: {}", message));
         })
     };
     let onopen = {
@@ -140,6 +137,7 @@ pub fn home() -> Html {
             handle_test.run();
         })
     };
+
 
     html! {
         <main>
