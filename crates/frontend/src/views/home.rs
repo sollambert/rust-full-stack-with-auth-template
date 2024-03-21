@@ -1,11 +1,11 @@
-use gloo_console::error;
+use gloo_console::{error, log};
 use gloo_net::http::Request;
 use tauri_sys::tauri::invoke;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 
 use types::user::UserInfo;
-use crate::{components::{buttons::button::Button, user_info_panel::UserInfoPanel}, services};
+use crate::{components::{buttons::button::Button, user_info_panel::UserInfoPanel}, services::{self, AuthStorage}};
 
 #[function_component(Home)]
 pub fn home() -> Html {
@@ -20,6 +20,8 @@ pub fn home() -> Html {
         },
         UseAsyncOptions::enable_auto(),
     );
+
+    let authenticated_chat = use_state(|| false);
 
     // Fetch data from backend.
     let state = {
@@ -91,16 +93,29 @@ pub fn home() -> Html {
     let onclick2 = {
         let ws = ws.clone();
         let history = history.clone();
+        let authenticated_chat = authenticated_chat.clone();
+        let message = "Hello, backend!";
         Callback::from(move |_| {
-            let message = "Hello, backend!".to_string();
-            ws.send(message.clone());
+            if *authenticated_chat {
+                ws.send(message.to_string());
+            } else {
+                if let Ok(token) = AuthStorage::get_requester_token() {
+                    ws.send(token.access_token + " " + message);
+                    authenticated_chat.set(true);
+                } else {
+                    ws.close();
+                }
+            }
             history.push(format!("ws [send]: {}", message));
         })
     };
     let onopen = {
         let ws = ws.clone();
         Callback::from(move |_| {
-            ws.open();
+            if let Ok(_token) = AuthStorage::get_requester_token() {
+                ws.open();
+            }
+            return;
         })
     };
 

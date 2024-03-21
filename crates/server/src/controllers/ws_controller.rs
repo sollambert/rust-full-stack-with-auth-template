@@ -7,6 +7,7 @@ use axum::{
 use axum::{
     extract::{ws::{Message, WebSocket, WebSocketUpgrade}, Request, State}, response::IntoResponse
 };
+use http::HeaderValue;
 use tokio::sync::broadcast;
 use futures::{sink::SinkExt, stream::StreamExt};
 
@@ -30,18 +31,62 @@ pub fn routes() -> Router {
         .with_state(app_state)
 }
 
-async fn ws_handler(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>, request: Request) -> impl IntoResponse {
-    let claims = AuthRequesterClaims::from_header(request.headers());
+async fn ws_handler(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) -> impl IntoResponse {
     ws.on_upgrade(|socket| {handle_socket(socket, state)})
 }
 
 async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
-    let mut authenticated = false;
     let (mut sender, mut receiver) = socket.split();
     let mut username = String::new();
-    while let Some(Ok(message)) = receiver.next().await {
-        if let Message::Text(name) = message {
-            
+    let mut first_message = String::new();
+    while let Some(Ok(auth)) = receiver.next().await {
+        if let Message::Text(text) = auth {
+            if let Some((claims_string, text)) = text.split_once(" ") {
+                println!("{claims_string}");
+                if let Ok(claims) = AuthRequesterClaims::from_string(&claims_string) {
+                    username = get_db_user_by_uuid(claims.sub.clone()).await.unwrap().username;
+                    first_message = text.to_string();
+                    break;
+                } else {
+                    sender.close().await.unwrap();
+                    return;
+                }
+            } else {
+                sender.close().await.unwrap();
+                return;
+            };
         }
     }
+
+    let mut rx = state.tx.subscribe();
+
+    let msg = format!("{username}: {first_message}");
+    let _ = state.tx.send(msg);
+
+    let mut send_task = tokio::spawn(async move {
+        while let Ok(msg) = rx.recv().await {
+            if sender.send(Message::Text(msg)).await.is_err() {
+                break;
+            }
+        }
+    });
+
+    let tx = state.tx.clone();
+    let name = username.clone();
+
+    let mut recv_task = tokio::spawn(async move {
+        while let Some(Ok(Message::Text(text))) = receiver.next().await {
+            let _ = tx.send(format!("{name}: {text}"));
+        }
+    });
+
+    tokio::select! {
+        _ = (&mut send_task) => recv_task.abort(),
+        _ = (&mut recv_task) => send_task.abort(),
+    };
+
+    let msg = format!("{username} left.");
+    let _ = state.tx.send(msg);
+
+    state.user_set.lock().unwrap().remove(&username);
 }
