@@ -3,11 +3,17 @@ use web_sys::{HtmlInputElement, WebSocket};
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 
-use crate::{services::AuthStorage, components::{buttons::button::Button, input::Input}};
+use crate::{services::AuthStorage, components::{buttons::button::Button, icons::send_icon::SendIcon, input::Input}};
+
+#[derive(Clone, Properties, PartialEq)]
+pub struct Props {
+    #[prop_or(String::new())]
+    pub class: String
+}
 
 #[function_component(ChatWindow)]
-pub fn chat_windows() -> Html {
-
+pub fn chat_windows(props: &Props) -> Html {
+    let props = props.clone();
     let chat_disabled = use_state(|| true);
     let chat_message = use_state(|| String::new());
 
@@ -92,20 +98,21 @@ pub fn chat_windows() -> Html {
     });
 
     html! {
-        <div class="flex flex-col justify-center w-fit h-min
-        rounded-md text-lg font-strong ring-offset-background disabled:pointer-events-none
-        focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-        h-10 px-4 py-2 bg-slate-900 text-slate-100">
-            {
-                for history.current().iter().map(|message| {
-                    html! {
-                        <p>{ message }</p>
-                    }
-                })
-            }
-            <form class="flex flex-row w-72 h-12 space-x-2" onsubmit={send_chat_submit}>
+        <div class={props.class}>
+            <div class="grow-0 h-2/3 px-4 py-2 py-2 bg-slate-900
+            rounded-md ring-offset-background disabled:pointer-events-none
+            overflow-y-auto text-wrap">
+                {
+                    for history.current().iter().map(|message| {
+                        html! {
+                            <p>{ message }</p>
+                        }
+                    })
+                }
+            </div>
+            <form class="flex flex-row h-12 w-full space-x-2" onsubmit={send_chat_submit}>
                 <Input input_type="email" placeholder="Message..." oninput={oninput} value={(*chat_message).to_owned()} />
-                <Button onclick={send_chat} label={"Send"} disabled={*chat_disabled} />
+                <Button onclick={send_chat} icon={html!(<SendIcon class="fill-white"/>)} disabled={*chat_disabled}></Button>
             </form>
         </div>
     }

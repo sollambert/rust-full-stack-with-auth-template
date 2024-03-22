@@ -22,11 +22,11 @@ pub fn input(props: &Props) -> Html {
     });
     html! {
         <>
-            <input class="rounded-md text-sm font-medium ring-offset-background
+            <input class="rounded-md text-sm font-medium ring-offset-background w-full
                         transition-colors focus-visible:outline-none
                         focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                         disabled:pointer-events-none disabled:opacity-50
-                        h-10 px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90"
+                        px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90"
                     oninput={oninput}
                     type={props.input_type}
                     placeholder={props.placeholder}

@@ -31,7 +31,6 @@ pub fn home() -> Html {
 
     html! {
         <main>
-            <ChatWindow />
             <p class="space-x-4 m-4">
                 <Button onclick={test_onclick} label={"Test Auth"} />
             </p>

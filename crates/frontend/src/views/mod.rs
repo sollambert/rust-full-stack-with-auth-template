@@ -1,4 +1,5 @@
 pub mod home;
+pub mod chat;
 pub mod register;
 pub mod login;
 pub mod not_found;

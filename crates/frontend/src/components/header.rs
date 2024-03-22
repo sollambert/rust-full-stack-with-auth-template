@@ -8,7 +8,12 @@ pub fn header() -> Html {
 
     html! {
         <header class="flex flex-row bg-slate-900 justify-between justify-items-center">
-            <NavButton label="Home" destination={AppRoute::Home} />
+            <div class="flex flex-row">
+                <NavButton label="Home" destination={AppRoute::Home} />
+                if user_state.user_info.uuid != String::new() {
+                    <NavButton label="Chat" destination={AppRoute::Chat} />
+                }
+            </div>
             <div class="flex flex-row">
                 if user_state.user_info.uuid != String::new() {
                     if user_state.user_info.is_admin {
