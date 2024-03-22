@@ -1,8 +1,8 @@
-use gloo_console::{error, log};
+use gloo_console::error;
 use gloo_net::http::Request;
 use tauri_sys::tauri::invoke;
 use web_sys::WebSocket;
-use yew::{html::SendAsMessage, prelude::*};
+use yew::prelude::*;
 use yew_hooks::prelude::*;
 
 use types::user::UserInfo;
@@ -21,6 +21,8 @@ pub fn home() -> Html {
         },
         UseAsyncOptions::enable_auto(),
     );
+
+    let chat_disabled = use_state(|| true);
 
     // Fetch data from backend.
     let state = {
@@ -77,14 +79,16 @@ pub fn home() -> Html {
         if cfg!(debug_assertions) && port == "" {
             port = "3001".to_string();
         }
+        let chat_disabled_for_open = chat_disabled.clone();
+        let chat_disabled_for_close = chat_disabled.clone();
         use_websocket_with_options(
             format!("ws://localhost:{}/ws", port),
             UseWebSocketOptions {
                 onopen: Some(Box::new(move |event| {
                     let socket = event.target_dyn_into::<WebSocket>().unwrap();
                     if let Ok(token) = AuthStorage::get_requester_token() {
-                        log!(format!("{}", token.access_token));
                         socket.send_with_str(&token.access_token).unwrap();
+                        chat_disabled_for_open.set(false);
                     } else {
                         socket.close().unwrap();
                     }
@@ -92,6 +96,9 @@ pub fn home() -> Html {
                 // Receive message by callback `onmessage`.
                 onmessage: Some(Box::new(move |message| {
                     history.push(format!("{}", message));
+                })),
+                onclose: Some(Box::new(move |_event| {
+                    chat_disabled_for_close.set(true);
                 })),
                 manual: Some(true),
                 ..Default::default()
@@ -106,15 +113,11 @@ pub fn home() -> Html {
                 ws.send(message.to_string());
         })
     };
-    let onopen = {
-        let ws = ws.clone();
-        Callback::from(move |_| {
-            if let Ok(_token) = AuthStorage::get_requester_token() {
-                ws.open();
-            }
-            return;
-        })
-    };
+
+    use_effect_once(move || {
+        ws.open();
+        move || {ws.close()}
+    });
 
     let handle_test = {
         use_async(async move {
@@ -164,8 +167,7 @@ pub fn home() -> Html {
                 }
             }
             <p class="space-x-4 m-4">
-                <Button onclick={onopen} label={"Connect to backend websocket"} disabled={*ws.ready_state != UseWebSocketReadyState::Closed} />
-                <Button onclick={onclick2} label={"Send to backend websocket"} disabled={*ws.ready_state != UseWebSocketReadyState::Open} />
+                <Button onclick={onclick2} label={"Send chat"} disabled={*chat_disabled} />
             </p>
             <p class="space-x-4 m-4">
                 <Button onclick={test_onclick} label={"Test Auth"} />
