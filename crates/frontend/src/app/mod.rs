@@ -58,7 +58,7 @@ pub fn app() -> Html {
 
     html! {
         <HashRouter>
-            <body class="flex flex-col place-content-between h-screen w-screen">
+            <body class="flex flex-col justify-between h-screen w-screen">
                 <Header />
                 <Switch<AppRoute> render={switch} />
                 <Footer />

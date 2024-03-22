@@ -99,7 +99,7 @@ pub fn chat_windows(props: &Props) -> Html {
 
     html! {
         <div class={props.class}>
-            <div class="grow-0 h-2/3 px-4 py-2 py-2 bg-slate-900
+            <div class="h-full px-4 py-2 py-2 bg-slate-900
             rounded-md ring-offset-background disabled:pointer-events-none
             overflow-y-auto text-wrap">
                 {
