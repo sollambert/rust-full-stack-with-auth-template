@@ -1,4 +1,4 @@
-use gloo_console::{error, log};
+use gloo_console::error;
 use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION}, Method, StatusCode, Url};
 use types::user::UserInfo;
 
