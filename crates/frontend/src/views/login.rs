@@ -17,14 +17,14 @@ pub fn login() -> Html {
     });
 
     html! {
-        <main class="flex flex-col items-center h-100">
+        <div class="flex flex-col justify-center items-center h-full">
             <LoginForm />
-            <div tabindex={0} class="cursor-pointer text-blue-700 underline
+            <div tabindex={0} class="cursor-pointer text-blue-400 underline
                     focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-3"
                     onclick={move |_| {HashHistory::new().push("/register")}}
                     onkeypress={move |e: KeyboardEvent| {if e.key() == "Enter" { HashHistory::new().push("/register")}}}>
                 {"Need an account?"}
             </div>
-        </main>
+        </div>
     }
 }

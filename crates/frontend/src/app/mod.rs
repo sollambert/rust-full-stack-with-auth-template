@@ -3,7 +3,7 @@ use yewdux::prelude::*;
 use yew_router::prelude::*;
 use types::user::UserInfo;
 
-use crate::{components::{auth::{admin_route::AdminRoute, protected_route::ProtectedRoute}, footer::Footer, header::Header}, services, views::{admin_view::AdminView, home::Home, login::Login, not_found::NotFound, register::Register, user_view::UserView}};
+use crate::{components::{auth::{admin_route::AdminRoute, protected_route::ProtectedRoute}, footer::Footer, header::Header}, services, views::{admin_view::AdminView, chat::Chat, home::Home, login::Login, not_found::NotFound, register::Register, user_view::UserView}};
 
 
 #[derive(Default, PartialEq, Store)]
@@ -20,6 +20,8 @@ pub enum AppRoute {
     AdminPanel,
     #[at("/settings")]
     UserPanel,
+    #[at("/chat")]
+    Chat,
     #[at("/login")]
     Login,
     #[at("/register")]
@@ -33,6 +35,7 @@ pub fn switch(route: AppRoute) -> Html {
     match route {
         AppRoute::Home => html! {<Home />},
         AppRoute::AdminPanel => html! {<AdminRoute><AdminView /></AdminRoute>},
+        AppRoute::Chat => html! {<ProtectedRoute><Chat /></ProtectedRoute>},
         AppRoute::UserPanel => html! {<ProtectedRoute><UserView /></ProtectedRoute>},
         AppRoute::Login => html! {<Login />},
         AppRoute::Register => html! {<Register />},
@@ -55,9 +58,11 @@ pub fn app() -> Html {
 
     html! {
         <HashRouter>
-            <body class="flex flex-col place-content-between h-screen w-screen">
+            <body class="grid grid-rows-24 grid-cols-12 auto-rows-auto h-screen bg-slate-700">
                 <Header />
-                <Switch<AppRoute> render={switch} />
+                <main class="col-span-12 row-span-22">
+                    <Switch<AppRoute> render={switch} />
+                </main>
                 <Footer />
             </body>
         </HashRouter>

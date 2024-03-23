@@ -1,21 +1,12 @@
 use std::net::SocketAddr;
 
 use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
-    http::Method,
-    response::IntoResponse,
-    routing::get,
-    Json, Router,
+    http::Method, Router,
 };
 use tower_http::cors::{Any, CorsLayer};
 
-use types::user::UserInfo;
-
 pub async fn app(port: u16) {
     let app = Router::new()
-        .route("/ws", get(ws_handler))
-        .route("/user", get(user_handler))
-        .route("/", get(handler))
         .layer(CorsLayer::new().allow_origin(Any).allow_methods(vec![
             Method::GET,
             Method::POST,
@@ -30,50 +21,4 @@ pub async fn app(port: u16) {
         .serve(app.into_make_service())
         .await
         .unwrap();
-}
-
-async fn handler() -> impl IntoResponse {
-    "Hello, from backend!"
-}
-
-async fn user_handler() -> impl IntoResponse {
-    let user = UserInfo {
-        uuid: "1".to_owned(),
-        email: "test@test.com".to_owned(),
-        username: "Backend user".to_owned(),
-        is_admin: false
-    };
-
-    Json(user)
-}
-
-async fn ws_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
-    ws.on_upgrade(handle_socket)
-}
-
-async fn handle_socket(mut socket: WebSocket) {
-    loop {
-        if let Some(msg) = socket.recv().await {
-            if let Ok(msg) = msg {
-                match msg {
-                    Message::Text(t) => {
-                        // Echo
-                        if socket
-                            .send(Message::Text(format!("Echo from backend: {}", t)))
-                            .await
-                            .is_err()
-                        {
-                            return;
-                        }
-                    }
-                    Message::Close(_) => {
-                        return;
-                    }
-                    _ => {}
-                }
-            } else {
-                return;
-            }
-        }
-    }
 }

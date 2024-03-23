@@ -71,6 +71,21 @@ pub trait Claims {
         let value = headers.get("X-Claims").unwrap();
         return serde_json::from_str(&String::from_utf8(BASE64_STANDARD.decode(value).unwrap()).unwrap()).unwrap();
     }
+    fn from_string(encoded_str: &str) -> Result<Self, AuthError>
+    where Self: Sized,Self: for<'de> Deserialize<'de> {
+        let mut validation = Validation::new(Algorithm::HS256);
+        validation.leeway = 5;
+        validation.set_audience(&[env::var("COMPANY_DOMAIN").unwrap()]);
+        validation.set_issuer(&[env::var("COMPANY_NAME").unwrap()]);
+        match decode::<Self>(encoded_str, &KEYS.decoding, &validation) {
+            Ok(claims) => {
+                Ok(claims.claims)
+            },
+            Err(_) => {
+                Err(AuthError::InvalidToken)
+            }
+        }
+    }
 }
 
 // build claims from request Authorization header
