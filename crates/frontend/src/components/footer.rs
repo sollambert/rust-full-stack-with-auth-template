@@ -5,7 +5,9 @@ use crate::components::buttons::externalbutton::ExternalButton;
 pub fn footer() -> Html {
 
     html! {
-        <footer class="flex flex-row w-screen bg-slate-900 justify-evenly justify-items-center">
+        <footer class="self-end col-span-12 row-span-1 h-full
+                flex flex-row w-screen bg-slate-900
+                justify-evenly justify-items-center items-center">
             <ExternalButton label="Yew Docs" destination="https://yew.rs/docs/getting-started/introduction"/>
             <ExternalButton label="Are we web yet?" destination="https://www.arewewebyet.org/"/>
         </footer>

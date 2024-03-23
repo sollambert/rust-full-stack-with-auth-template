@@ -55,6 +55,9 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
 
     let mut send_task = tokio::spawn(async move {
         while let Ok(msg) = rx.recv().await {
+            if msg == String::new() {
+                break;
+            }
             if sender.send(Message::Text(msg)).await.is_err() {
                 break;
             }
@@ -66,6 +69,9 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
 
     let mut recv_task = tokio::spawn(async move {
         while let Some(Ok(Message::Text(text))) = receiver.next().await {
+            if text == String::new() {
+                break;
+            }
             let _ = tx.send(format!("{name}: {text}"));
         }
     });

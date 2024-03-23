@@ -58,9 +58,11 @@ pub fn app() -> Html {
 
     html! {
         <HashRouter>
-            <body class="flex flex-col justify-between h-screen w-screen">
+            <body class="grid grid-rows-24 grid-cols-12 auto-rows-auto h-screen bg-slate-700">
                 <Header />
-                <Switch<AppRoute> render={switch} />
+                <main class="col-span-12 row-span-22">
+                    <Switch<AppRoute> render={switch} />
+                </main>
                 <Footer />
             </body>
         </HashRouter>

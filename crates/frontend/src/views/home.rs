@@ -1,7 +1,7 @@
 use gloo_console::error;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
-use crate::{components::{buttons::button::Button, chat_window::ChatWindow, user_info_panel::UserInfoPanel}, services};
+use crate::{components::buttons::button::Button, services};
 
 #[function_component(Home)]
 pub fn home() -> Html {
@@ -30,10 +30,10 @@ pub fn home() -> Html {
 
 
     html! {
-        <main>
+        <div class="flex flex-row justify-center items-center h-full">
             <p class="space-x-4 m-4">
                 <Button onclick={test_onclick} label={"Test Auth"} />
             </p>
-        </main>
+        </div>
     }
 }

@@ -111,7 +111,7 @@ pub fn chat_windows(props: &Props) -> Html {
                 }
             </div>
             <form class="flex flex-row h-12 w-full space-x-2" onsubmit={send_chat_submit}>
-                <Input input_type="email" placeholder="Message..." oninput={oninput} value={(*chat_message).to_owned()} />
+                <Input input_type="text" placeholder="Message..." oninput={oninput} value={(*chat_message).to_owned()} />
                 <Button onclick={send_chat} icon={html!(<SendIcon class="fill-white"/>)} disabled={*chat_disabled}></Button>
             </form>
         </div>
