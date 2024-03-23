@@ -1,6 +1,6 @@
 use std::env;
 use bcrypt::{DEFAULT_COST, hash_with_salt};
-use types::user::{RegisterUser, User};
+use types::user::{RegisterUser, User, UserInfo};
 use uuid::Uuid;
 
 use crate::pool;
@@ -18,6 +18,11 @@ pub async fn get_db_user_by_uuid(uuid: String) -> Result<User, sqlx::Error> {
         "SELECT * FROM \"users\" WHERE uuid = $1;")
         .bind(uuid)
         .fetch_one(&pool::get_pool()).await
+}
+
+pub async fn get_all_users() -> Result<Vec<UserInfo>, sqlx::Error> {
+    sqlx::query_as::<_, UserInfo>("SELECT * FROM \"users\";")
+        .fetch_all(&pool::get_pool()).await
 }
 
 pub async fn insert_db_user(register_user: RegisterUser) -> Result<User, sqlx::Error> {

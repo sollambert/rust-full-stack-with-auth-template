@@ -226,7 +226,8 @@ pub enum AuthError {
     UserDoesNotExist,
     InvalidToken,
     BadRequest,
-    ServerError
+    ServerError,
+    AccessDenied
 }
 
 impl IntoResponse for AuthError {
@@ -238,6 +239,7 @@ impl IntoResponse for AuthError {
             AuthError::UserAlreadyExists => (StatusCode::CONFLICT, "Username and email must be unique"),
             AuthError::UserDoesNotExist => (StatusCode::NO_CONTENT, "User does not exist"),
             AuthError::InvalidToken => (StatusCode::FORBIDDEN, "Invalid token"),
+            AuthError::AccessDenied => (StatusCode::FORBIDDEN, "Access denied"),
             AuthError::BadRequest => (StatusCode::BAD_REQUEST, "Bad request")
         };
         let body = Json(json!({

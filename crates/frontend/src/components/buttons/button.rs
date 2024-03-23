@@ -25,7 +25,7 @@ pub fn button(props: &Props) -> Html {
                     transition-colors focus-visible:outline-none
                     focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                     disabled:pointer-events-none disabled:opacity-50
-                    px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-900/90"
+                    px-4 py-2 bg-slate-900 text-slate-100 hover:bg-slate-800"
                 onclick={onclick}
                 disabled={props.disabled}>
             {props.label}
