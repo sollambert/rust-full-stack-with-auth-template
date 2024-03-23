@@ -11,7 +11,9 @@ pub fn user_info_panel() -> Html {
         <div class="flex flex-col justify-center w-fit h-min
         rounded-md text-lg font-strong ring-offset-background disabled:pointer-events-none
         focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-        h-10 px-4 py-2 bg-slate-900 text-slate-100">
+        h-10 px-4 py-2
+        bg-slate-100 text-slate-800 shadow-md
+        dark:bg-slate-900 dark:text-slate-100">
             <p>
                 {format!("UUID: {}", user_state.user_info.uuid.clone())}
             </p>

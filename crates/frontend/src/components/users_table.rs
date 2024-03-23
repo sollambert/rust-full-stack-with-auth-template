@@ -59,7 +59,9 @@ pub fn users_table() -> Html {
     html! {
         <div class="w-11/12 flex flex-col h-min
         rounded-md text-lg font-strong overflow-y-auto
-        h-10 px-4 py-2 my-10 bg-slate-900 text-slate-100">
+        h-10 px-4 py-2 my-10
+        bg-slate-100 text-slate-800 shadow-md
+        dark:bg-slate-900 dark:text-slate-100">
             <table>
                 <thead>
                     <tr class="text-left">
@@ -80,7 +82,8 @@ pub fn users_table() -> Html {
                                 <td>{user.username}</td>
                                 <td>{user.email}</td>
                                 <td>{user.is_admin.to_string()}</td>
-                                <td><Button label="Delete" onclick={move |_| {onclick.emit(delete_id.clone());}}/></td>
+                                <td><Button color="bg-slate-200 text-slate-800 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                                        label="Delete" onclick={move |_| {onclick.emit(delete_id.clone());}}/></td>
                             </tr>
                         }
                     }).collect::<Html>()}

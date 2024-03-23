@@ -7,7 +7,9 @@ pub fn header() -> Html {
     let (user_state, _user_dispatch) = use_store::<UserState>();
 
     html! {
-        <header class="col-span-12 row-span-1 flex flex-row bg-slate-900 justify-between justify-items-center items-center">
+        <header class="col-span-12 row-span-1 flex flex-row
+            bg-slate-100 dark:bg-slate-900 shadow-md
+            justify-between justify-items-center items-center">
             <div class="flex flex-row h-full">
                 <NavButton label="Home" destination={AppRoute::Home} />
                 if user_state.user_info.uuid != String::new() {
