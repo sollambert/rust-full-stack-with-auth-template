@@ -7,7 +7,7 @@ pub fn chat() -> Html {
         <main class="h-full">
             <ChatWindow class="flex shrink flex-col w-full h-full
             ring-offset-background disabled:pointer-events-none
-            p-4 bg-slate-700 text-slate-100 space-y-2 text-sm"/>
+            p-4 space-y-2 text-sm"/>
         </main>
     }
 }

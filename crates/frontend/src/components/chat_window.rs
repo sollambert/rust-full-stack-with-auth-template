@@ -102,9 +102,11 @@ pub fn chat_windows(props: &Props) -> Html {
 
     html! {
         <div class={props.class}>
-            <div class="h-full px-4 py-2 py-2 bg-slate-900
+            <div class="h-full px-4 py-2 py-2 
+            bg-slate-100 text-slate-800
+            dark:bg-slate-900 dark:text-slate-100
             rounded-md ring-offset-background disabled:pointer-events-none
-            overflow-y-auto text-wrap">
+            overflow-y-auto text-wrap shadow-md">
                 {
                     for history.current().iter().map(|message| {
                         html! {
@@ -115,7 +117,7 @@ pub fn chat_windows(props: &Props) -> Html {
             </div>
             <form class="flex flex-row h-12 w-full space-x-2" onsubmit={send_chat_submit}>
                 <Input input_type="text" placeholder="Message..." oninput={oninput} value={(*chat_message).to_owned()} />
-                <Button onclick={send_chat} icon={html!(<SendIcon class="fill-white"/>)} disabled={*chat_disabled}></Button>
+                <Button onclick={send_chat} icon={html!(<SendIcon class="fill-slate-600 dark:fill-white"/>)} disabled={*chat_disabled}></Button>
             </form>
         </div>
     }

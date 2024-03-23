@@ -58,7 +58,7 @@ pub fn app() -> Html {
 
     html! {
         <HashRouter>
-            <body class="grid grid-rows-24 grid-cols-12 auto-rows-auto h-screen bg-slate-700">
+            <body class="grid grid-rows-24 grid-cols-12 auto-rows-auto h-screen bg-slate-50 dark:bg-slate-700">
                 <Header />
                 <main class="col-span-12 row-span-22">
                     <Switch<AppRoute> render={switch} />
