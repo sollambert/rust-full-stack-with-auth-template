@@ -77,6 +77,9 @@ pub fn chat_windows(props: &Props) -> Html {
         let ws = ws.clone();
         let chat_message = chat_message.clone();
         Callback::from(move |_| {
+                if *chat_message == String::new() {
+                    return;
+                }
                 ws.send(chat_message.to_string());
                 chat_message.set(String::new());
         })
