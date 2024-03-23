@@ -1,8 +1,8 @@
 use gloo_console::error;
-use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION}, Method, Url};
+use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION}, Method, StatusCode, Url};
 use types::user::UserInfo;
 
-use super::{get_http_client, AuthStorage};
+use super::{get_http_auth_client, get_http_client, AuthStorage};
 
 pub async fn get_user_info() -> UserInfo {
     let auth_token = AuthStorage::get_requester_token();
@@ -35,6 +35,39 @@ pub async fn get_user_info() -> UserInfo {
         Err(error) => {
             error!("Error with request: {}", error.to_string());
             UserInfo::new()
+        }
+    }
+}
+
+pub async fn get_all_users() -> Result<(StatusCode, Vec<UserInfo>), StatusCode> {
+    let response = get_http_auth_client().get("http://localhost:3001/user/all").send().await;
+    match response {
+        Ok(data) => {
+            let status = data.status().clone();
+            match data.json::<Vec<UserInfo>>().await {
+                Ok(users) => {
+                    Ok((status, users))
+                },
+                Err(_error) => {
+                    Err(status)
+                }
+            }
+        },
+        Err(error) => {
+            error!("Error with request: {}", error.to_string());
+            Err(error.status().unwrap())
+        }
+    }
+}
+
+pub async fn delete_user(uuid: String) -> Result<StatusCode, StatusCode> {
+    let response = get_http_auth_client().delete("http://localhost:3001/user").body(uuid).send().await;
+    match response {
+        Ok(response) => {
+            Ok(response.status())
+        },
+        Err(error) => {
+            Err(error.status().unwrap())
         }
     }
 }

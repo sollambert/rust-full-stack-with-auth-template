@@ -38,13 +38,13 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
     let mut username = String::new();
     while let Some(Ok(auth)) = receiver.next().await {
         if let Message::Text(text) = auth {
-                if let Ok(claims) = AuthRequesterClaims::from_string(&text) {
-                    username = get_db_user_by_uuid(claims.sub.clone()).await.unwrap().username;
-                    break;
-                } else {
-                    sender.close().await.unwrap();
-                    return;
-                }
+            if let Ok(claims) = AuthRequesterClaims::from_string(&text) {
+                username = get_db_user_by_uuid(claims.sub.clone()).await.unwrap().username;
+                break;
+            } else {
+                sender.close().await.unwrap();
+                return;
+            }
         }
     }
 

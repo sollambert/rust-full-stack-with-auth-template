@@ -36,20 +36,24 @@ async fn request_auth_token(request: Request) -> Result<(StatusCode, HeaderMap),
     // generate AuthRequesterClaims from encoded x-claim header
     let claims = AuthRequesterClaims::from_header(request.headers());
     // generate new AuthClaims token from UUID in AuthRequesterClaims
-    let token_result = AuthClaims::new(claims.sub.clone()).await.unwrap().generate_token();
-    let auth_token: AuthToken;
-    match token_result {
-        Ok(token) => auth_token = token,
-        Err(error) => {
-            println!("Error creating token for UUID {}: {:?}", claims.sub, error);
-            return Err(error)
+    if let Ok(auth_claims) = AuthClaims::new(claims.sub.clone()).await {
+        let token_result = auth_claims.generate_token();
+        let auth_token: AuthToken;
+        match token_result {
+            Ok(token) => auth_token = token,
+            Err(error) => {
+                println!("Error creating token for UUID {}: {:?}", claims.sub, error);
+                return Err(error)
+            }
         }
+        // insert newly generated token into Authorization header
+        let mut header_map = HeaderMap::new();
+        header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
+        // respond to request with token in header
+        Ok((StatusCode::CREATED, header_map.clone()))
+    } else {
+        Err(AuthError::AccessDenied)
     }
-    // insert newly generated token into Authorization header
-    let mut header_map = HeaderMap::new();
-    header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
-    // respond to request with token in header
-    Ok((StatusCode::CREATED, header_map.clone()))
 }
 
 // route for logging in user with provided LoginUser json
