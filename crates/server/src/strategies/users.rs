@@ -1,5 +1,6 @@
 use std::env;
 use bcrypt::{DEFAULT_COST, hash_with_salt};
+use sqlx::any::AnyRow;
 use types::user::{RegisterUser, User, UserInfo};
 use uuid::Uuid;
 
@@ -25,10 +26,15 @@ pub async fn get_all_users() -> Result<Vec<UserInfo>, sqlx::Error> {
         .fetch_all(&pool::get_pool()).await
 }
 
+pub async fn delete_user_by_uuid(uuid: String) -> Result<AnyRow, sqlx::Error> {
+    sqlx::query("DELETE FROM \"users\" WHERE uuid = $1;")
+        .bind(uuid)
+        .fetch_one(&pool::get_pool()).await
+}
+
 pub async fn insert_db_user(register_user: RegisterUser) -> Result<User, sqlx::Error> {
     // generate new user id
     let id = Uuid::new_v4();
-    println!("{}", id);
     // initialize salt str slice
     let mut salt: [u8; 16] = [0;16];
     // load 16 bytes from PASSWORD_SALT env variable to salt str slice

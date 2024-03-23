@@ -46,7 +46,6 @@ pub async fn get_all_users() -> Result<(StatusCode, Vec<UserInfo>), StatusCode> 
             let status = data.status().clone();
             match data.json::<Vec<UserInfo>>().await {
                 Ok(users) => {
-                    log!(format!("{:?}", users));
                     Ok((status, users))
                 },
                 Err(_error) => {
@@ -56,6 +55,18 @@ pub async fn get_all_users() -> Result<(StatusCode, Vec<UserInfo>), StatusCode> 
         },
         Err(error) => {
             error!("Error with request: {}", error.to_string());
+            Err(error.status().unwrap())
+        }
+    }
+}
+
+pub async fn delete_user(uuid: String) -> Result<StatusCode, StatusCode> {
+    let response = get_http_auth_client().delete("http://localhost:3001/user").body(uuid).send().await;
+    match response {
+        Ok(response) => {
+            Ok(response.status())
+        },
+        Err(error) => {
             Err(error.status().unwrap())
         }
     }
