@@ -7,8 +7,8 @@ pub fn home() -> Html {
 
 
     html! {
-        <div class="h-full flex">
-            <div class="flex flex-col md:flex-row self-center justify-self-center justify-center items-center h-2/3
+        <div class="h-full w-full flex justify-center items-center">
+            <div class="flex flex-col md:flex-row justify-center items-center h-2/3
             rounded-md space-y-10
             bg-slate-100 text-slate-800 shadow-md mx-10 p-10
             dark:bg-slate-900 dark:text-slate-100">
