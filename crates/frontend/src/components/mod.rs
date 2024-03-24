@@ -4,6 +4,7 @@ pub mod header;
 pub mod footer;
 pub mod buttons;
 pub mod icons;
+pub mod graphics;
 pub mod user_info_panel;
 pub mod chat_window;
 pub mod users_table;
