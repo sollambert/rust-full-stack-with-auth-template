@@ -6,7 +6,7 @@ use crate::components::users_table::UsersTable;
 pub fn admin_view() -> Html {
 
     html! {
-        <main class="flex flex-col items-center h-full">
+        <main class="col-span-12 row-span-24 flex flex-col items-center">
             <UsersTable />
         </main>
     }

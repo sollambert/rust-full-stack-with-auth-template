@@ -7,8 +7,8 @@ pub fn header() -> Html {
     let (user_state, _user_dispatch) = use_store::<UserState>();
 
     html! {
-        <header class="col-span-12 row-span-1 flex flex-row
-            bg-slate-100 dark:bg-slate-900 shadow-md
+        <header class="flex flex-row h-8 z-10 fixed
+            bg-slate-100 dark:bg-slate-900 shadow-md w-screen
             justify-between justify-items-center items-center">
             <div class="flex flex-row h-full">
                 <NavButton label="Home" destination={AppRoute::Home} />

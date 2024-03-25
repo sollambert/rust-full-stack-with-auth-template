@@ -39,7 +39,7 @@ pub fn user_view() -> Html {
     };
 
     html! {
-        <div class="flex flex-col justify-center items-center h-full space-y-2">
+        <div class="col-span-12 row-span-24 flex flex-col justify-center items-center h-full space-y-2">
             <UserInfoPanel />
             <div class="flex flex-row space-x-4">
                 <Button label={"Logout"} onclick={logout_onclick} />

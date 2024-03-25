@@ -17,7 +17,7 @@ pub fn login() -> Html {
     });
 
     html! {
-        <div class="flex flex-col justify-center items-center h-full">
+        <div class="col-span-12 row-span-24 flex flex-col justify-center items-center h-full">
             <RegisterForm />
             <div tabindex={0} class="cursor-pointer text-blue-600 dark:text-blue-400 underline
                     focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-3"
