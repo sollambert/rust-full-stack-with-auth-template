@@ -3,6 +3,7 @@ mod components;
 mod hooks;
 mod services;
 mod views;
+mod graphics;
 
 use crate::app::App;
 

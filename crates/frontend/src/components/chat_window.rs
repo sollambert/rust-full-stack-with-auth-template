@@ -3,7 +3,7 @@ use web_sys::{HtmlInputElement, WebSocket};
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 
-use crate::{services::AuthStorage, components::{buttons::button::Button, icons::send_icon::SendIcon, input::Input}};
+use crate::{services::AuthStorage, graphics::icons::send_icon::SendIcon, components::{buttons::button::Button, input::Input}};
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct Props {

@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::components::graphics::ferris::Ferris;
+use crate::graphics::ferris::Ferris;
 
 #[function_component(Home)]
 pub fn home() -> Html {
