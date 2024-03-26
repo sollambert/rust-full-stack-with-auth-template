@@ -66,7 +66,7 @@ pub fn login_form() -> Html {
     html! {
         <form class="flex flex-col w-64 h-48 space-y-2" onsubmit={login_onsubmit}>
             if *error_message != String::new() {
-                <div class="px-4 py-2 rounded-md bg-red-300 text-red-600 text-center">
+                <div class="px-4 py-2 rounded-md bg-red-300 text-red-600 text-center shadow-md">
                     {(*error_message).clone()}
                 </div>
             }
