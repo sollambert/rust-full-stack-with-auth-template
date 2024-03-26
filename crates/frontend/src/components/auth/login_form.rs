@@ -14,6 +14,7 @@ use crate::{services, app::UserState, components::{buttons::button::Button, inpu
 pub fn login_form() -> Html {
     let (_user_state, user_dispatch) = use_store::<UserState>();
     let login_user = use_state(LoginUser::default);
+    let error_message = use_state(|| String::new());
 
     let oninput = |key| {
         let login_user = login_user.clone();
@@ -28,6 +29,7 @@ pub fn login_form() -> Html {
     };
 
     let handle_login = {
+        let error_message = error_message.clone();
         let login_user = login_user.clone();
         use_async(async move {
             let response = services::auth::login_user((*login_user).clone()).await;
@@ -39,7 +41,7 @@ pub fn login_form() -> Html {
                     Ok(user_info)
                 },
                 Err(error) => {
-                    error!("No response found: {}", error.to_string());
+                    error_message.set(String::from("Invalid login credentials"));
                     Err(error)
                 }
             }
@@ -63,6 +65,11 @@ pub fn login_form() -> Html {
 
     html! {
         <form class="flex flex-col w-64 h-48 space-y-2" onsubmit={login_onsubmit}>
+            if *error_message != String::new() {
+                <div class="px-4 py-2 rounded-md bg-red-300 text-red-600 text-center">
+                    {(*error_message).clone()}
+                </div>
+            }
             <Input input_type="text" placeholder="Username" oninput={oninput.clone()("username")} value={login_user.username.to_owned()} />
             <Input input_type="password" placeholder="Password" oninput={oninput.clone()("pass")} value={login_user.pass.to_owned()} />
             <Button onclick={login_onclick} label="Login" />
