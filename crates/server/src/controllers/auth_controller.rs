@@ -73,7 +73,7 @@ async fn login_user(
     // unwrap result from DB as user object
     let user = result.unwrap();
     // verify supplied password is validated
-    if verify(payload.pass, &user.pass).is_ok() {
+    if verify(payload.pass, &user.pass).unwrap() {
         // build response user
         let user_info = UserInfo {
             uuid: user.uuid,
