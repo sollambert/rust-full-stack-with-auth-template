@@ -9,7 +9,7 @@ pub fn home() -> Html {
     html! {
         <div class="col-span-12 row-span-24 flex justify-center items-center">
             <div class="flex flex-col md:flex-row justify-center items-center
-            h-2/3 rounded-md space-y-10
+            h-2/3 rounded-md space-y-10 border-slate-300 dark:border-slate-700 border
             bg-slate-100 text-slate-800 shadow-md mx-10 p-10
             dark:bg-slate-900 dark:text-slate-100">
                 <div class="flex flex-col justify-center text-center space-y-2">

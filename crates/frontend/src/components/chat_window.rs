@@ -104,6 +104,7 @@ pub fn chat_windows(props: &Props) -> Html {
         <div class={props.class}>
             <div class="h-full px-4 py-2 py-2 
             bg-slate-100 text-slate-800
+            border-slate-300 dark:border-slate-700 border
             dark:bg-slate-900 dark:text-slate-100
             rounded-md ring-offset-background disabled:pointer-events-none
             overflow-y-auto text-wrap shadow-md">

@@ -7,7 +7,7 @@ pub fn header() -> Html {
     let (user_state, _user_dispatch) = use_store::<UserState>();
 
     html! {
-        <header class="flex flex-row h-8 z-10 fixed
+        <header class="flex flex-row h-8 z-10 fixed border-slate-300 dark:border-slate-700 border-b
             bg-slate-100 dark:bg-slate-900 shadow-md w-screen
             justify-between justify-items-center items-center">
             <div class="flex flex-row h-full">

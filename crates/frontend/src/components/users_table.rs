@@ -59,6 +59,7 @@ pub fn users_table() -> Html {
     html! {
         <div class="w-11/12 flex flex-col h-min
         rounded-md text-lg font-strong overflow-y-auto
+        border-slate-300 dark:border-slate-700 border
         h-10 px-4 py-2 my-10
         bg-slate-100 text-slate-800 shadow-md
         dark:bg-slate-900 dark:text-slate-100">

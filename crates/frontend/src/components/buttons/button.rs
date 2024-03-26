@@ -25,6 +25,7 @@ pub fn button(props: &Props) -> Html {
     html! {
         <button class={"inline-flex items-center justify-center
                     rounded-md text-sm font-medium ring-offset-background
+                    border-slate-300 dark:border-slate-700 border
                     transition-colors focus-visible:outline-none
                     focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                     disabled:pointer-events-none disabled:opacity-50 px-4 py-2 shadow-md ".to_owned() + &props.color}
