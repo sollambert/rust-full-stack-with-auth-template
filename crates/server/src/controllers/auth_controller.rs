@@ -75,12 +75,7 @@ async fn login_user(
     // verify supplied password is validated
     if verify(payload.pass, &user.pass).unwrap() {
         // build response user
-        let user_info = UserInfo {
-            uuid: user.uuid,
-            username: user.username,
-            email: user.email,
-            is_admin: user.is_admin
-        };
+        let user_info = UserInfo::from_user(user);
         // generate token from UserInfo uuid
         let token_result = AuthRequesterClaims::new(user_info.uuid.clone()).await.unwrap().generate_token();
         let auth_token: AuthToken;
@@ -120,12 +115,7 @@ async fn register_user(
     // unwrap returned User object
     let user = db_result.unwrap();
     // build UserInfo to return from User object
-    let user_info = UserInfo {
-        uuid: user.uuid.clone(),
-        email: user.email,
-        username: user.username,
-        is_admin: user.is_admin
-    };
+    let user_info = UserInfo::from_user(user);
     // generate token from UserInfo uuid
     let token_result = AuthRequesterClaims::new(user_info.uuid.clone()).await.unwrap().generate_token();
     let auth_token: AuthToken;

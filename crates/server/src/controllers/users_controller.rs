@@ -28,12 +28,7 @@ async fn get_user_info(request: Request) -> Result<(StatusCode, Json<UserInfo>),
     let claims = AuthRequesterClaims::from_header(request.headers());
     match get_db_user_by_uuid(claims.sub).await {
         Ok(user) => {
-            Ok((StatusCode::OK, axum::Json(UserInfo {
-                uuid: user.uuid,
-                username: user.username,
-                email: user.email,
-                is_admin: user.is_admin
-            })))
+            Ok((StatusCode::OK, axum::Json(UserInfo::from_user(user))))
         }, Err(_) => Err(AuthError::UserDoesNotExist)
     }
 }

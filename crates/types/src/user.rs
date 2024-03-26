@@ -97,6 +97,14 @@ impl fmt::Display for UserInfo {
 }
 
 impl UserInfo {
+    pub fn from_user(user: User) -> Self {
+        Self {
+            uuid: user.uuid,
+            username: user.username,
+            email: user.email,
+            is_admin: user.is_admin
+        }
+    }
     pub fn new() -> Self {
         Self {
             uuid: String::new(),
