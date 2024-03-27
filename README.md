@@ -102,4 +102,4 @@ You are also welcome to open a PR or a new issue if you see something is missing
 
 ## License
 
-Apache-2.0/MIT
+MIT
