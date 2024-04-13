@@ -47,7 +47,6 @@ pub fn register_form() -> Html {
                     Ok(user_info)
                 },
                 Err(error) => {
-                    error!(format!("{:?}", error));
                     register_user.set(RegisterUser::default());
                     error_state.set(Some(error.to_owned()));
                     Err(error)
@@ -74,7 +73,7 @@ pub fn register_form() -> Html {
     html! {
         <form class="flex flex-col w-64 space-y-2" onsubmit={register_onsubmit}>
             if let Some(error) = (*error_state).to_owned() {
-                <ErrorMessage message={error.body.message} />
+                <ErrorMessage message={error.body().message} />
             }
             <Input input_type="text" placeholder="Username" oninput={oninput("username")} value={register_user.username.to_owned()} />
             <Input input_type="password" placeholder="Password" oninput={oninput("pass")} value={register_user.pass.to_owned()} />

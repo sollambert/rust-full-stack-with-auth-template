@@ -1,3 +1,4 @@
+use http::StatusCode;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -33,6 +34,30 @@ impl AuthToken {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct AuthError {
+    pub status: StatusCode,
+    pub body: AuthErrorBody
+}
+
+impl AuthError {
+    pub fn default() -> Self {
+        Self {
+            status: StatusCode::SERVICE_UNAVAILABLE,
+            body: AuthErrorBody {
+                error_type: AuthErrorType::ServerError,
+                message: String::from("Auth service unavailable.")
+            }
+        }
+    }
+    pub fn body(&self) -> AuthErrorBody {
+        self.body.to_owned()
+    }
+    pub fn status(&self) -> StatusCode {
+        self.status.to_owned()
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum AuthErrorType {
     WrongCredentials,
@@ -42,7 +67,8 @@ pub enum AuthErrorType {
     InvalidToken,
     BadRequest,
     ServerError,
-    AccessDenied
+    AccessDenied,
+    MissingFields
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

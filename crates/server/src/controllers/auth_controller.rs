@@ -100,7 +100,7 @@ async fn register_user(
     Json(payload): Json<RegisterUser>,
 ) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), AuthError> {
     if payload.username.is_empty() || payload.pass.is_empty() || payload.email.is_empty() {
-        return Err(AuthError::from_error_type(AuthErrorType::BadRequest));
+        return Err(AuthError::from_error_type(AuthErrorType::MissingFields));
     }
     // insert user into table
     let db_result = users::insert_db_user(payload).await;

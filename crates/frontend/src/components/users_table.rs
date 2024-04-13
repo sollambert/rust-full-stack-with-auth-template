@@ -1,7 +1,6 @@
 use types::user::UserInfo;
 use yew::prelude::*;
 use yew_hooks::{use_async, use_effect_once};
-use gloo_console::error;
 
 use crate::{services, components::buttons::button::Button};
 
@@ -20,7 +19,6 @@ pub fn users_table() -> Html {
                     Ok(data.0)
                 },
                 Err(error) => {
-                    error!("No response found: {}", error.to_string());
                     Err(error)
                 }
             }
@@ -38,7 +36,6 @@ pub fn users_table() -> Html {
                 Ok(data)
             },
             Err(error) => {
-                error!("No response found: {}", error.to_string());
                 Err(error)
             }
         }

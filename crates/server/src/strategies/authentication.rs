@@ -219,10 +219,7 @@ where
 }
 
 #[derive(Debug)]
-pub struct AuthError {
-    pub status: StatusCode,
-    pub body: AuthErrorBody
-}
+pub struct AuthError(types::auth::AuthError);
 
 impl AuthError {
     pub fn from_error_type(error_type: AuthErrorType) -> Self {
@@ -230,24 +227,33 @@ impl AuthError {
             AuthErrorType::WrongCredentials => (StatusCode::UNAUTHORIZED, String::from("Wrong credentials")),
             AuthErrorType::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Token creation error")),
             AuthErrorType::ServerError => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Server error")),
-            AuthErrorType::UserAlreadyExists => (StatusCode::CONFLICT, String::from("Username and email must be unique")),
+            AuthErrorType::UserAlreadyExists => (StatusCode::CONFLICT, String::from("Username or email taken")),
             AuthErrorType::UserDoesNotExist => (StatusCode::NO_CONTENT, String::from("User does not exist")),
             AuthErrorType::InvalidToken => (StatusCode::FORBIDDEN, String::from("Invalid token")),
             AuthErrorType::AccessDenied => (StatusCode::FORBIDDEN, String::from("Access denied")),
+            AuthErrorType::MissingFields => (StatusCode::BAD_REQUEST, String::from("Missing required fields")),
             AuthErrorType::BadRequest => (StatusCode::BAD_REQUEST, String::from("Bad request"))
         };
-        AuthError {
-            status,
-            body: AuthErrorBody {
-                error_type,
-                message
+        Self {
+            0: types::auth::AuthError {
+                status,
+                body: AuthErrorBody {
+                    error_type,
+                    message
+                }
             }
         }
+    }
+    pub fn status(&self) -> StatusCode {
+        self.0.status.to_owned()
+    }
+    pub fn body(&self) -> AuthErrorBody {
+        self.0.body.to_owned()
     }
 }
 
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response<Body> {
-        (self.status, Json(json!(self.body))).into_response()
+        (self.status(), Json(json!(self.body()))).into_response()
     }
 }

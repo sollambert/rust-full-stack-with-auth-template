@@ -1,8 +1,10 @@
+use std::str::FromStr;
+
 use gloo_storage::{Storage, errors::StorageError};
 use once_cell::sync::OnceCell;
-use reqwest::{Client, StatusCode};
+use reqwest::{Client, Response, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
-use types::auth::{AuthErrorBody, AuthErrorType, AuthToken};
+use types::auth::{AuthErrorBody, AuthToken};
 
 use self::auth::AuthMiddleware;
 
@@ -69,22 +71,31 @@ impl <'a>AuthStorage<'a> {
         }
     }
 }
-
-
 #[derive(Debug, Clone)]
-pub struct AuthError {
-    pub status: StatusCode,
-    pub body: AuthErrorBody
-}
+pub struct AuthError(types::auth::AuthError);
 
 impl AuthError {
-    pub fn default() -> Self {
-        AuthError  {
-            status: StatusCode::SERVICE_UNAVAILABLE,
-            body: AuthErrorBody {
-                error_type: AuthErrorType::ServerError,
-                message: String::from("Auth service unavailable.")
+    pub async fn from_response(response: Response) -> Self {
+        let status: StatusCode = response.status();
+        let error_body = response.json::<AuthErrorBody>().await;
+        if let Err(_) = error_body {
+            return Self {
+                0: types::auth::AuthError::default()
             }
+        }
+        return Self  {
+            0: types::auth::AuthError {
+                status: http::StatusCode::from_str(status.as_str()).unwrap(),
+                body: error_body.unwrap()
+            }
+        };
+    }
+    pub fn body(&self) -> AuthErrorBody {
+        self.0.body.to_owned()
+    }
+    pub fn default() -> Self {
+        Self {
+            0: types::auth::AuthError::default()
         }
     }
 }
