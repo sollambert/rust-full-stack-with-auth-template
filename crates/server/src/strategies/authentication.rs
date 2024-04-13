@@ -228,7 +228,7 @@ impl AuthError {
             AuthErrorType::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Token creation error")),
             AuthErrorType::ServerError => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Server error")),
             AuthErrorType::UserAlreadyExists => (StatusCode::CONFLICT, String::from("Username or email taken")),
-            AuthErrorType::UserDoesNotExist => (StatusCode::NO_CONTENT, String::from("User does not exist")),
+            AuthErrorType::UserDoesNotExist => (StatusCode::NOT_FOUND, String::from("User does not exist")),
             AuthErrorType::InvalidToken => (StatusCode::FORBIDDEN, String::from("Invalid token")),
             AuthErrorType::AccessDenied => (StatusCode::FORBIDDEN, String::from("Access denied")),
             AuthErrorType::MissingFields => (StatusCode::BAD_REQUEST, String::from("Missing required fields")),

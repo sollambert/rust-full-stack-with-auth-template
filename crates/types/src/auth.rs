@@ -46,7 +46,7 @@ impl AuthError {
             status: StatusCode::SERVICE_UNAVAILABLE,
             body: AuthErrorBody {
                 error_type: AuthErrorType::ServerError,
-                message: String::from("Auth service unavailable.")
+                message: String::from("Generic auth error")
             }
         }
     }

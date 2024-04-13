@@ -1,6 +1,6 @@
 use types::user::RegisterUser;
 use web_sys::HtmlInputElement;
-use yew::{function_component, html, use_state, Callback, Html, InputEvent, SubmitEvent, TargetCast};
+use yew::{function_component, html, use_state, Callback, Html, InputEvent, SubmitEvent, TargetCast, UseStateHandle};
 use yew_hooks::use_async;
 use gloo_console::error;
 use yew_router::history::{History, HashHistory};
@@ -14,9 +14,7 @@ pub fn register_form() -> Html {
     let error_state = use_state(|| None::<AuthError>);
     let register_user = use_state(RegisterUser::default);
 
-    let error_state = error_state.clone();
-    let oninput = |key| {
-
+    let oninput = |key, error_state: &UseStateHandle<Option<AuthError>>| {
         let error_state = error_state.clone();
         let register_user = register_user.clone();
         Callback::from(move |e: InputEvent| {
@@ -33,7 +31,6 @@ pub fn register_form() -> Html {
         })
     };
 
-    let error_state = error_state.clone();
     let handle_register = {
         let register_user = register_user.clone();
         let error_state = error_state.clone();
@@ -47,7 +44,6 @@ pub fn register_form() -> Html {
                     Ok(user_info)
                 },
                 Err(error) => {
-                    register_user.set(RegisterUser::default());
                     error_state.set(Some(error.to_owned()));
                     Err(error)
                 }
@@ -75,9 +71,9 @@ pub fn register_form() -> Html {
             if let Some(error) = (*error_state).to_owned() {
                 <ErrorMessage message={error.body().message} />
             }
-            <Input input_type="text" placeholder="Username" oninput={oninput("username")} value={register_user.username.to_owned()} />
-            <Input input_type="password" placeholder="Password" oninput={oninput("pass")} value={register_user.pass.to_owned()} />
-            <Input input_type="email" placeholder="Email" oninput={oninput("email")} value={register_user.email.to_owned()} />
+            <Input input_type="text" placeholder="Username" oninput={oninput("username", &error_state)} value={register_user.username.to_owned()} />
+            <Input input_type="password" placeholder="Password" oninput={oninput("pass", &error_state)} value={register_user.pass.to_owned()} />
+            <Input input_type="email" placeholder="Email" oninput={oninput("email", &error_state)} value={register_user.email.to_owned()} />
             <Button onclick={register_onclick} label="Register" />
         </form>
     }

@@ -1,6 +1,7 @@
 use gloo_console::error;
 use types::user::LoginUser;
 use web_sys::HtmlInputElement;
+use yew::UseStateHandle;
 use yew::{function_component, html, use_state, Callback, Html, InputEvent, SubmitEvent, TargetCast};
 use yew_hooks::use_async;
 
@@ -9,18 +10,24 @@ use yew_router::history::HashHistory;
 use yewdux::prelude::*;
 
 use crate::components::error_message::ErrorMessage;
+use crate::services::AuthError;
 use crate::{services, app::UserState, components::{buttons::button::Button, input::Input}};
 
 #[function_component(LoginForm)]
 pub fn login_form() -> Html {
     let (_user_state, user_dispatch) = use_store::<UserState>();
     let login_user = use_state(LoginUser::default);
-    let error_message = use_state(|| String::new());
+    let error_state = use_state(|| None::<AuthError>);
 
-    let oninput = |key| {
+    let oninput = |key, error_state: &UseStateHandle<Option<AuthError>>| {
+        let error_state = (*error_state).clone();
         let login_user = login_user.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
+            let error_state = error_state.clone();
+            if let Some(_) = *error_state {
+                error_state.set(None);
+            }
             match login_user.update_field(key, input.value()) {
                 Ok(new_login_user) => {
                     login_user.set(new_login_user);
@@ -30,7 +37,7 @@ pub fn login_form() -> Html {
     };
 
     let handle_login = {
-        let error_message = error_message.clone();
+        let error_state = error_state.clone();
         let login_user = login_user.clone();
         use_async(async move {
             let response = services::auth::login_user((*login_user).clone()).await;
@@ -42,7 +49,7 @@ pub fn login_form() -> Html {
                     Ok(user_info)
                 },
                 Err(error) => {
-                    error_message.set(String::from("Invalid login credentials"));
+                    error_state.set(Some(error.to_owned()));
                     Err(error)
                 }
             }
@@ -66,11 +73,11 @@ pub fn login_form() -> Html {
 
     html! {
         <form class="flex flex-col w-64 space-y-2" onsubmit={login_onsubmit}>
-            if *error_message != String::new() {
-                <ErrorMessage message={(*error_message).clone()} />
+            if let Some(error) = (*error_state).to_owned() {
+                <ErrorMessage message={error.body().message} />
             }
-            <Input input_type="text" placeholder="Username" oninput={oninput.clone()("username")} value={login_user.username.to_owned()} />
-            <Input input_type="password" placeholder="Password" oninput={oninput.clone()("pass")} value={login_user.pass.to_owned()} />
+            <Input input_type="text" placeholder="Username" oninput={oninput.clone()("username", &error_state)} value={login_user.username.to_owned()} />
+            <Input input_type="password" placeholder="Password" oninput={oninput.clone()("pass", &error_state)} value={login_user.pass.to_owned()} />
             <Button onclick={login_onclick} label="Login" />
         </form>
     }

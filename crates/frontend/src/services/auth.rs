@@ -193,8 +193,8 @@ pub async fn login_user(user: LoginUser) -> Result<UserInfo, AuthError>  {
 
     // Extract user info from json body
     let json_result = response.json::<UserInfo>().await;
-    if let Err(error) = json_result {
-        return Err(AuthError::default())
+    if let Err(_) = json_result {
+        return Err(AuthError::default());
     }
 
     // Unwrap JSON result and return as OK result
