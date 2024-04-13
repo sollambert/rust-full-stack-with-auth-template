@@ -1,8 +1,8 @@
 use gloo_storage::{Storage, errors::StorageError};
 use once_cell::sync::OnceCell;
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
-use types::auth::AuthToken;
+use types::auth::{AuthErrorBody, AuthErrorType, AuthToken};
 
 use self::auth::AuthMiddleware;
 
@@ -66,6 +66,25 @@ impl <'a>AuthStorage<'a> {
     pub fn new(token_string: &'a str) -> Self {
         Self {
             token_string
+        }
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct AuthError {
+    pub status: StatusCode,
+    pub body: AuthErrorBody
+}
+
+impl AuthError {
+    pub fn default() -> Self {
+        AuthError  {
+            status: StatusCode::SERVICE_UNAVAILABLE,
+            body: AuthErrorBody {
+                error_type: AuthErrorType::ServerError,
+                message: String::from("Auth service unavailable.")
+            }
         }
     }
 }

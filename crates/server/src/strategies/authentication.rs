@@ -6,7 +6,7 @@ use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, 
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use types::auth::AuthToken;
+use types::auth::{AuthErrorBody, AuthErrorType, AuthToken};
 use struct_iterable::Iterable;
 use base64::prelude::*;
 
@@ -61,7 +61,7 @@ pub trait Claims {
             },
             Err(error) => {
                 println!("Error creating token: {}", error);
-                Err(AuthError::TokenCreation)
+                Err(AuthError::from_error_type(AuthErrorType::TokenCreation))
             }
         }
     }
@@ -82,7 +82,7 @@ pub trait Claims {
                 Ok(claims.claims)
             },
             Err(_) => {
-                Err(AuthError::InvalidToken)
+                Err(AuthError::from_error_type(AuthErrorType::InvalidToken))
             }
         }
     }
@@ -95,7 +95,7 @@ where T: for<'de> Deserialize<'de> {
     let TypedHeader(Authorization(bearer)) = parts
         .extract::<TypedHeader<Authorization<Bearer>>>()
         .await
-        .map_err(|_| AuthError::InvalidToken)?;
+        .map_err(|_| AuthError::from_error_type(AuthErrorType::InvalidToken))?;
     // Build validation strategy
     let mut validation = Validation::new(Algorithm::HS256);
     validation.leeway = 5;
@@ -103,7 +103,7 @@ where T: for<'de> Deserialize<'de> {
     validation.set_issuer(&[env::var("COMPANY_NAME").unwrap()]);
     // Decode the user data
     let token_data = decode::<T>(bearer.token(), &KEYS.decoding, &validation)
-    .map_err(|_| AuthError::InvalidToken)?;
+    .map_err(|_| AuthError::from_error_type(AuthErrorType::InvalidToken))?;
     Ok(token_data.claims)
 }
 
@@ -147,7 +147,7 @@ impl Claims for AuthClaims {
                 acc: user.is_admin
             }),
             Err(_) => {
-                Err(AuthError::TokenCreation)
+                Err(AuthError::from_error_type(AuthErrorType::TokenCreation))
             }
         }
     }
@@ -219,32 +219,35 @@ where
 }
 
 #[derive(Debug)]
-pub enum AuthError {
-    WrongCredentials,
-    TokenCreation,
-    UserAlreadyExists,
-    UserDoesNotExist,
-    InvalidToken,
-    BadRequest,
-    ServerError,
-    AccessDenied
+pub struct AuthError {
+    pub status: StatusCode,
+    pub body: AuthErrorBody
+}
+
+impl AuthError {
+    pub fn from_error_type(error_type: AuthErrorType) -> Self {
+        let (status, message) = match error_type {
+            AuthErrorType::WrongCredentials => (StatusCode::UNAUTHORIZED, String::from("Wrong credentials")),
+            AuthErrorType::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Token creation error")),
+            AuthErrorType::ServerError => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Server error")),
+            AuthErrorType::UserAlreadyExists => (StatusCode::CONFLICT, String::from("Username and email must be unique")),
+            AuthErrorType::UserDoesNotExist => (StatusCode::NO_CONTENT, String::from("User does not exist")),
+            AuthErrorType::InvalidToken => (StatusCode::FORBIDDEN, String::from("Invalid token")),
+            AuthErrorType::AccessDenied => (StatusCode::FORBIDDEN, String::from("Access denied")),
+            AuthErrorType::BadRequest => (StatusCode::BAD_REQUEST, String::from("Bad request"))
+        };
+        AuthError {
+            status,
+            body: AuthErrorBody {
+                error_type,
+                message
+            }
+        }
+    }
 }
 
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response<Body> {
-        let (status, error_message) = match self {
-            AuthError::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
-            AuthError::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, "Token creation error"),
-            AuthError::ServerError => (StatusCode::INTERNAL_SERVER_ERROR, "Server error"),
-            AuthError::UserAlreadyExists => (StatusCode::CONFLICT, "Username and email must be unique"),
-            AuthError::UserDoesNotExist => (StatusCode::NO_CONTENT, "User does not exist"),
-            AuthError::InvalidToken => (StatusCode::FORBIDDEN, "Invalid token"),
-            AuthError::AccessDenied => (StatusCode::FORBIDDEN, "Access denied"),
-            AuthError::BadRequest => (StatusCode::BAD_REQUEST, "Bad request")
-        };
-        let body = Json(json!({
-            "error": error_message,
-        }));
-        (status, body).into_response()
+        (self.status, Json(json!(self.body))).into_response()
     }
 }

@@ -18,7 +18,7 @@ pub fn login() -> Html {
     });
 
     html! {
-        <div class="col-span-12 row-span-24 flex flex-col justify-center items-center h-full">
+        <div class="col-span-12 row-span-24 flex flex-col justify-center items-center h-full space-y-4">
             <RegisterForm />
             <Link<AppRoute> to={AppRoute::Login}>
                 <div class="cursor-pointer text-blue-600 dark:text-blue-400 underline

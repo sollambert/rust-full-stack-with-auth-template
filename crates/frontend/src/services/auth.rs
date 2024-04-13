@@ -3,14 +3,13 @@ use std::str::FromStr;
 use gloo_console::{error, log};
 
 use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION}, Method, Request, Response, StatusCode, Url};
-use types::{auth, user::{LoginUser, RegisterUser, UserInfo}};
+use types::{auth::AuthErrorBody, user::{LoginUser, RegisterUser, UserInfo}};
 use yew_router::history::{HashHistory, History};
 use reqwest_middleware::{Middleware, Next};
 use task_local_extensions::Extensions;
 
 use super::{
-    get_http_auth_client,
-    get_http_client, AuthStorage};
+    get_http_auth_client, get_http_client, AuthError, AuthStorage};
 
 pub struct AuthMiddleware;
 
@@ -126,12 +125,12 @@ pub async fn request_auth_token() -> Result<StatusCode, StatusCode> {
     Ok(status)
 }
 
-pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
+pub async fn register_user(user: RegisterUser) -> Result<UserInfo, AuthError> {
     // Send register data to server
     let request_result = get_http_client().post("http://localhost:3001/auth/register").json(&user).send().await;
     if let Err(error) = request_result {
         error!("Error with request: {}", error.to_string());
-        return Err(error.status().unwrap_or(StatusCode::SERVICE_UNAVAILABLE));
+        return Err(AuthError::default());
     }
 
     // Unwrap response from request_result
@@ -140,7 +139,14 @@ pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
 
     // Check if status is success
     if !status.is_success() {
-        return Err(status);
+        let error_body = response.json::<AuthErrorBody>().await;
+        if let Err(_) = error_body {
+            return Err(AuthError::default());
+        }
+        return Err(AuthError {
+            status,
+            body: error_body.unwrap()
+        });
     }
 
     // Extract auth requester token from headers and store in local browser storage
@@ -158,7 +164,7 @@ pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
     let json_result = response.json::<UserInfo>().await;
     if let Err(error) = json_result {
         error!("Error parsing body: {}", error.to_string());
-        return Err(status)
+        return Err(AuthError::default());
     }
 
     // Unwrap JSON result and return as OK result

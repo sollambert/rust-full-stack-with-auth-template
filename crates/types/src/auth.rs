@@ -32,3 +32,21 @@ impl AuthToken {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum AuthErrorType {
+    WrongCredentials,
+    TokenCreation,
+    UserAlreadyExists,
+    UserDoesNotExist,
+    InvalidToken,
+    BadRequest,
+    ServerError,
+    AccessDenied
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AuthErrorBody {
+    pub error_type: AuthErrorType,
+    pub message: String
+}

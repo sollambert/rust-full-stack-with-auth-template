@@ -8,6 +8,7 @@ use yew_router::history::History;
 use yew_router::history::HashHistory;
 use yewdux::prelude::*;
 
+use crate::components::error_message::ErrorMessage;
 use crate::{services, app::UserState, components::{buttons::button::Button, input::Input}};
 
 #[function_component(LoginForm)]
@@ -64,11 +65,9 @@ pub fn login_form() -> Html {
     };
 
     html! {
-        <form class="flex flex-col w-64 h-48 space-y-2" onsubmit={login_onsubmit}>
+        <form class="flex flex-col w-64 space-y-2" onsubmit={login_onsubmit}>
             if *error_message != String::new() {
-                <div class="px-4 py-2 rounded-md bg-red-300 text-red-600 text-center shadow-md">
-                    {(*error_message).clone()}
-                </div>
+                <ErrorMessage message={(*error_message).clone()} />
             }
             <Input input_type="text" placeholder="Username" oninput={oninput.clone()("username")} value={login_user.username.to_owned()} />
             <Input input_type="password" placeholder="Password" oninput={oninput.clone()("pass")} value={login_user.pass.to_owned()} />
