@@ -223,25 +223,8 @@ pub struct AuthError(types::auth::AuthError);
 
 impl AuthError {
     pub fn from_error_type(error_type: AuthErrorType) -> Self {
-        let (status, message) = match error_type {
-            AuthErrorType::WrongCredentials => (StatusCode::UNAUTHORIZED, String::from("Wrong credentials")),
-            AuthErrorType::TokenCreation => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Token creation error")),
-            AuthErrorType::ServerError => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Server error")),
-            AuthErrorType::UserAlreadyExists => (StatusCode::CONFLICT, String::from("Username or email taken")),
-            AuthErrorType::UserDoesNotExist => (StatusCode::NOT_FOUND, String::from("User does not exist")),
-            AuthErrorType::InvalidToken => (StatusCode::FORBIDDEN, String::from("Invalid token")),
-            AuthErrorType::AccessDenied => (StatusCode::FORBIDDEN, String::from("Access denied")),
-            AuthErrorType::MissingFields => (StatusCode::BAD_REQUEST, String::from("Missing required fields")),
-            AuthErrorType::BadRequest => (StatusCode::BAD_REQUEST, String::from("Bad request"))
-        };
         Self {
-            0: types::auth::AuthError {
-                status,
-                body: AuthErrorBody {
-                    error_type,
-                    message
-                }
-            }
+            0: types::auth::AuthError::from_error_type(error_type)
         }
     }
     pub fn status(&self) -> StatusCode {
