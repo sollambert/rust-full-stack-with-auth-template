@@ -32,15 +32,13 @@ pub fn get_http_auth_client() -> ClientWithMiddleware {
     HTTP_CLIENT_WITH_AUTH.get().unwrap().to_owned()
 }
 
-pub struct AuthStorage<'a> {
-    pub token_string: &'a str
-}
+pub struct AuthStorage;
 
-impl <'a>AuthStorage<'a> {
-    const TOKEN_KEY: &'a str = "AUTH_TOKEN";
-    const REQUESTER_TOKEN_KEY: &'a str = "AUTH_REQUESTER_TOKEN";
-    fn store(&self, token_key: &str) {
-        gloo_storage::LocalStorage::set(token_key, &self.token_string).unwrap();
+impl AuthStorage {
+    const TOKEN_KEY: &'static str = "AUTH_TOKEN";
+    const REQUESTER_TOKEN_KEY: &'static str = "AUTH_REQUESTER_TOKEN";
+    fn store(token_key: &str, token_string: &str) {
+        gloo_storage::LocalStorage::set(token_key, token_string).unwrap();
     }
     fn store_from_headers(headers: &HeaderMap) {
         headers.get_all(AUTHORIZATION).into_iter().for_each(|header| {
@@ -49,7 +47,7 @@ impl <'a>AuthStorage<'a> {
                 error!("Error converting header to str: {}", error.to_string());
             }
             let header_str = header_str_result.unwrap();
-            AuthStorage::new(&header_str).store_requester_token();
+            AuthStorage::store_requester_token(AuthToken::from_string(header_str.to_string()));
         });
     }
     fn clear() {
@@ -70,18 +68,14 @@ impl <'a>AuthStorage<'a> {
     pub fn get_auth_token() -> Result<AuthToken, StorageError> {
         Self::get(Self::TOKEN_KEY)
     }
-    pub fn store_requester_token(&self) {
-        self.store(Self::REQUESTER_TOKEN_KEY);
+    pub fn store_requester_token(token: AuthToken) {
+        Self::store(Self::REQUESTER_TOKEN_KEY, &token.to_string());
     }
-    pub fn store_auth_token(&self) {
-        self.store(Self::TOKEN_KEY);
-    }
-    pub fn new(token_string: &'a str) -> Self {
-        Self {
-            token_string
-        }
+    pub fn store_auth_token(token: AuthToken) {
+        Self::store(Self::TOKEN_KEY, &token.to_string());
     }
 }
+
 #[derive(Debug, Clone)]
 pub struct AuthError(types::auth::AuthError);
 

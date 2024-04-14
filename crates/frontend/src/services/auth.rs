@@ -3,7 +3,7 @@ use std::str::FromStr;
 use gloo_console::{error, log};
 
 use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION}, Method, Request, Response, StatusCode, Url};
-use types::{auth::AuthErrorType, user::{LoginUser, RegisterUser, UserInfo}};
+use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, UserInfo}};
 use reqwest_middleware::{Middleware, Next};
 use task_local_extensions::Extensions;
 
@@ -118,7 +118,7 @@ pub async fn request_auth_token() -> Result<StatusCode, AuthError> {
     let header_str = header.to_str().unwrap_or("");
 
     // Store auth token
-    AuthStorage::new(header_str).store_auth_token();
+    AuthStorage::store_auth_token(AuthToken::from_string(header_str.to_string()));
     Ok(status)
 }
 
