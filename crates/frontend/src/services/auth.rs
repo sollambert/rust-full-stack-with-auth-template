@@ -3,7 +3,7 @@ use std::str::FromStr;
 use gloo_console::{error, log};
 
 use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION}, Method, Request, Response, StatusCode, Url};
-use types::user::{LoginUser, RegisterUser, UserInfo};
+use types::{auth::AuthErrorType, user::{LoginUser, RegisterUser, UserInfo}};
 use reqwest_middleware::{Middleware, Next};
 use task_local_extensions::Extensions;
 
@@ -53,8 +53,7 @@ impl Middleware for AuthMiddleware {
 pub async fn test_auth_route() -> Result<StatusCode, AuthError> {
     // Send request to test auth route
     let request_result = get_http_auth_client().get("http://localhost:3001/auth/test").send().await;
-    if let Err(error) = request_result {
-        error!("Error with request: {}", error.to_string());
+    if let Err(_) = request_result {
         return Err(AuthError::default());
     }
     // Unwrap resonse from request_result
@@ -81,8 +80,8 @@ pub async fn test_auth_route() -> Result<StatusCode, AuthError> {
 pub async fn request_auth_token() -> Result<StatusCode, AuthError> {
     // Build auth header from token
     let auth_token_result = AuthStorage::get_requester_token();
-    if let Err(error) = &auth_token_result {
-        error!(format!("{:?}", error));
+    if let Err(_) = &auth_token_result {
+        return Err(AuthError::from_error_type(AuthErrorType::InvalidToken))
     }
     let auth_token = auth_token_result.unwrap();
 
@@ -113,7 +112,7 @@ pub async fn request_auth_token() -> Result<StatusCode, AuthError> {
     let headers = response.headers();
     let auth_header_result = headers.get(AUTHORIZATION);
     if let None = auth_header_result {
-        return Err(AuthError::default());
+        return Err(AuthError::from_error_type(AuthErrorType::TokenCreation));
     }
     let header = auth_header_result.unwrap();
     let header_str = header.to_str().unwrap_or("");
@@ -142,14 +141,7 @@ pub async fn register_user(user: RegisterUser) -> Result<UserInfo, AuthError> {
 
     // Extract auth requester token from headers and store in local browser storage
     let headers = response.headers();
-    headers.get_all(AUTHORIZATION).into_iter().for_each(|header| {
-        let header_str_result = header.to_str();
-        if let Err(error) = &header_str_result {
-            error!("Error converting header to str: {}", error.to_string());
-        }
-        let header_str = header_str_result.unwrap();
-        AuthStorage::new(&header_str).store_requester_token();
-    });
+    AuthStorage::store_from_headers(headers);
 
     // Extract user info from json body
     let json_result = response.json::<UserInfo>().await;
@@ -182,14 +174,7 @@ pub async fn login_user(user: LoginUser) -> Result<UserInfo, AuthError>  {
 
     // Extract auth requester token from headers and store in local browser storage
     let headers = response.headers();
-    headers.get_all(AUTHORIZATION).into_iter().for_each(|header| {
-        let header_str_result = header.to_str();
-        if let Err(error) = &header_str_result {
-            error!("Error converting header to str: {}", error.to_string());
-        }
-        let header_str = header_str_result.unwrap();
-        AuthStorage::new(&header_str).store_requester_token();
-    });
+    AuthStorage::store_from_headers(headers);
 
     // Extract user info from json body
     let json_result = response.json::<UserInfo>().await;

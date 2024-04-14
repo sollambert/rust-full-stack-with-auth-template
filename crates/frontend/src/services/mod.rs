@@ -1,10 +1,11 @@
 use std::str::FromStr;
 
+use gloo_console::error;
 use gloo_storage::{Storage, errors::StorageError};
 use once_cell::sync::OnceCell;
-use reqwest::{Client, Response, StatusCode};
+use reqwest::{header::{HeaderMap, AUTHORIZATION}, Client, Response, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
-use types::auth::{AuthErrorBody, AuthToken};
+use types::auth::{AuthErrorBody, AuthErrorType, AuthToken};
 
 use self::auth::AuthMiddleware;
 
@@ -40,6 +41,16 @@ impl <'a>AuthStorage<'a> {
     const REQUESTER_TOKEN_KEY: &'a str = "AUTH_REQUESTER_TOKEN";
     fn store(&self, token_key: &str) {
         gloo_storage::LocalStorage::set(token_key, &self.token_string).unwrap();
+    }
+    fn store_from_headers(headers: &HeaderMap) {
+        headers.get_all(AUTHORIZATION).into_iter().for_each(|header| {
+            let header_str_result = header.to_str();
+            if let Err(error) = &header_str_result {
+                error!("Error converting header to str: {}", error.to_string());
+            }
+            let header_str = header_str_result.unwrap();
+            AuthStorage::new(&header_str).store_requester_token();
+        });
     }
     fn clear() {
         gloo_storage::LocalStorage::delete(Self::TOKEN_KEY);
@@ -89,6 +100,11 @@ impl AuthError {
                 body: error_body.unwrap()
             }
         };
+    }
+    pub fn from_error_type(error_type: AuthErrorType) -> Self {
+        Self {
+            0: types::auth::AuthError::from_error_type(error_type)
+        }
     }
     pub fn body(&self) -> AuthErrorBody {
         self.0.body.to_owned()
