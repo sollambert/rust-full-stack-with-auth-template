@@ -3,7 +3,7 @@ use axum::{
 };
 use bcrypt::verify;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
-use types::{auth::AuthToken, user::{LoginUser, RegisterUser, UserInfo}};
+use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, UserInfo}};
 
 use crate::{middleware::token_authentication, strategies::{authentication::{AuthClaims, AuthError, AuthRequesterClaims, Claims}, users}};
 
@@ -52,7 +52,7 @@ async fn request_auth_token(request: Request) -> Result<(StatusCode, HeaderMap),
         // respond to request with token in header
         Ok((StatusCode::CREATED, header_map.clone()))
     } else {
-        Err(AuthError::AccessDenied)
+        Err(AuthError::from_error_type(AuthErrorType::AccessDenied))
     }
 }
 
@@ -62,13 +62,13 @@ async fn login_user(
 ) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), AuthError> {
     // check if supplied credentials are not empty
     if payload.username.is_empty() || payload.pass.is_empty() {
-        return Err(AuthError::WrongCredentials);
+        return Err(AuthError::from_error_type(AuthErrorType::WrongCredentials));
     }
     // get user by username from database
     let result = users::get_db_user_by_username_or_email(payload.username).await;
     // if can't get user by username, return 400
     if let Err(_) = result {
-        return Err(AuthError::UserDoesNotExist);
+        return Err(AuthError::from_error_type(AuthErrorType::UserDoesNotExist));
     }
     // unwrap result from DB as user object
     let user = result.unwrap();
@@ -90,7 +90,7 @@ async fn login_user(
         Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))
     } else {
         // respond with wrong credentials error
-        return Err(AuthError::WrongCredentials);
+        return Err(AuthError::from_error_type(AuthErrorType::WrongCredentials));
     }
 }
 
@@ -100,7 +100,7 @@ async fn register_user(
     Json(payload): Json<RegisterUser>,
 ) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), AuthError> {
     if payload.username.is_empty() || payload.pass.is_empty() || payload.email.is_empty() {
-        return Err(AuthError::BadRequest);
+        return Err(AuthError::from_error_type(AuthErrorType::MissingFields));
     }
     // insert user into table
     let db_result = users::insert_db_user(payload).await;
@@ -108,9 +108,9 @@ async fn register_user(
     if let Err(error) = db_result {
         println!("Error creating user: {}", error);
         if error.to_string().contains("duplicate key") {
-            return Err(AuthError::UserAlreadyExists)
+            return Err(AuthError::from_error_type(AuthErrorType::UserAlreadyExists))
         }
-        return Err(AuthError::ServerError);
+        return Err(AuthError::from_error_type(AuthErrorType::ServerError));
     }
     // unwrap returned User object
     let user = db_result.unwrap();
@@ -123,7 +123,7 @@ async fn register_user(
         Ok(token) => auth_token = token,
         Err(error) => {
             println!("Error creating token for UUID {}: {:?}", user_info.uuid, error);
-            return Err(AuthError::TokenCreation)
+            return Err(AuthError::from_error_type(AuthErrorType::TokenCreation))
         }
     }
     // insert parsed token into headermap

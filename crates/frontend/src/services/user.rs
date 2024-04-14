@@ -29,16 +29,15 @@ pub async fn get_user_info() -> UserInfo {
 
     // Request user info from server
     let request_result = request_builder.send().await;
-    if let Err(error) = request_result {
-        error!("Error with request: {}", error.to_string());
+    if let Err(_) = request_result {
         return UserInfo::new();
     }
+
     let response = request_result.unwrap();
     
     // Parse response body as JSON
     let json_result = response.json::<UserInfo>().await;
-    if let Err(error) = json_result {
-        error!("Failed to parse response body as json: {}", error.to_string());
+    if let Err(_) = json_result {
         return UserInfo::new();
     }
 
@@ -62,8 +61,7 @@ pub async fn get_all_users() -> Result<(StatusCode, Vec<UserInfo>), StatusCode> 
     // Parse body as JSON
     let json_result = response.json::<Vec<UserInfo>>().await;
     if let Err(error) = json_result {
-        error!("Failed to parse response body as json: {}", error.to_string());
-        return Err(error.status().unwrap());
+        return Err(error.status().unwrap_or_default());
     }
 
     // Return vec of users

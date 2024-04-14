@@ -3,14 +3,12 @@ use std::str::FromStr;
 use gloo_console::{error, log};
 
 use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION}, Method, Request, Response, StatusCode, Url};
-use types::{auth, user::{LoginUser, RegisterUser, UserInfo}};
-use yew_router::history::{HashHistory, History};
+use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, UserInfo}};
 use reqwest_middleware::{Middleware, Next};
 use task_local_extensions::Extensions;
 
 use super::{
-    get_http_auth_client,
-    get_http_client, AuthStorage};
+    get_http_auth_client, get_http_client, AuthError, AuthStorage};
 
 pub struct AuthMiddleware;
 
@@ -33,7 +31,7 @@ impl Middleware for AuthMiddleware {
         // Request an auth token
         let auth_token_request_result = request_auth_token().await;
         if let Err(error) = auth_token_request_result {
-            error!(format!("Error requesting auth token: {error}"));
+            error!(format!("Error requesting auth token: {}", error.body().message));
         }
 
         // Get auth token from storage
@@ -52,12 +50,11 @@ impl Middleware for AuthMiddleware {
     }
 }
 
-pub async fn test_auth_route() -> Result<StatusCode, StatusCode> {
+pub async fn test_auth_route() -> Result<StatusCode, AuthError> {
     // Send request to test auth route
     let request_result = get_http_auth_client().get("http://localhost:3001/auth/test").send().await;
-    if let Err(error) = request_result {
-        error!("Error with request: {}", error.to_string());
-        return Err(error.status().unwrap_or(StatusCode::SERVICE_UNAVAILABLE));
+    if let Err(_) = request_result {
+        return Err(AuthError::default());
     }
     // Unwrap resonse from request_result
     let response = request_result.unwrap();
@@ -65,14 +62,14 @@ pub async fn test_auth_route() -> Result<StatusCode, StatusCode> {
 
     // Check if status is success
     if !status.is_success() {
-        return Err(status);
+        return Err(AuthError::from_response(response).await);
     }
 
     // Extract text from body and log to console
     let text_result = response.text().await;
     if let Err(error) = text_result {
         error!(format!("Error with parsing body as text: {error}"));
-        Err(status)
+        Err(AuthError::default())
     } else {
         let text = text_result.unwrap();
         log!(format!("{text}"));
@@ -80,11 +77,11 @@ pub async fn test_auth_route() -> Result<StatusCode, StatusCode> {
     }
 }
 
-pub async fn request_auth_token() -> Result<StatusCode, StatusCode> {
+pub async fn request_auth_token() -> Result<StatusCode, AuthError> {
     // Build auth header from token
     let auth_token_result = AuthStorage::get_requester_token();
-    if let Err(error) = &auth_token_result {
-        error!(format!("{:?}", error));
+    if let Err(_) = &auth_token_result {
+        return Err(AuthError::from_error_type(AuthErrorType::InvalidToken))
     }
     let auth_token = auth_token_result.unwrap();
 
@@ -97,7 +94,7 @@ pub async fn request_auth_token() -> Result<StatusCode, StatusCode> {
     let request_result = request_builder.send().await;
     if let Err(error) = request_result {
         error!("Error with request: {}", error.to_string());
-        return Err(error.status().unwrap_or(StatusCode::SERVICE_UNAVAILABLE));
+        return Err(AuthError::default());
     }
 
     // Unwrap response from request_result
@@ -105,33 +102,32 @@ pub async fn request_auth_token() -> Result<StatusCode, StatusCode> {
 
     // Get status and match for responsive behavior
     let status = response.status();
-    match status {
-        StatusCode::FORBIDDEN=> {
-            HashHistory::new().push("/login");
-        }
-        _=>{}
+
+    // Check if status is success
+    if !status.is_success() {
+        return Err(AuthError::from_response(response).await);
     }
 
     // Extract auth header from headers
     let headers = response.headers();
     let auth_header_result = headers.get(AUTHORIZATION);
     if let None = auth_header_result {
-        return Err(StatusCode::FORBIDDEN);
+        return Err(AuthError::from_error_type(AuthErrorType::TokenCreation));
     }
     let header = auth_header_result.unwrap();
     let header_str = header.to_str().unwrap_or("");
 
     // Store auth token
-    AuthStorage::new(header_str).store_auth_token();
+    AuthStorage::store_auth_token(AuthToken::from_string(header_str.to_string()));
     Ok(status)
 }
 
-pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
+pub async fn register_user(user: RegisterUser) -> Result<UserInfo, AuthError> {
     // Send register data to server
     let request_result = get_http_client().post("http://localhost:3001/auth/register").json(&user).send().await;
     if let Err(error) = request_result {
         error!("Error with request: {}", error.to_string());
-        return Err(error.status().unwrap_or(StatusCode::SERVICE_UNAVAILABLE));
+        return Err(AuthError::default());
     }
 
     // Unwrap response from request_result
@@ -140,25 +136,18 @@ pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
 
     // Check if status is success
     if !status.is_success() {
-        return Err(status);
+        return Err(AuthError::from_response(response).await);
     }
 
     // Extract auth requester token from headers and store in local browser storage
     let headers = response.headers();
-    headers.get_all(AUTHORIZATION).into_iter().for_each(|header| {
-        let header_str_result = header.to_str();
-        if let Err(error) = &header_str_result {
-            error!("Error converting header to str: {}", error.to_string());
-        }
-        let header_str = header_str_result.unwrap();
-        AuthStorage::new(&header_str).store_requester_token();
-    });
+    AuthStorage::store_from_headers(headers);
 
     // Extract user info from json body
     let json_result = response.json::<UserInfo>().await;
     if let Err(error) = json_result {
         error!("Error parsing body: {}", error.to_string());
-        return Err(status)
+        return Err(AuthError::default());
     }
 
     // Unwrap JSON result and return as OK result
@@ -166,12 +155,12 @@ pub async fn register_user(user: RegisterUser) -> Result<UserInfo, StatusCode> {
     return Ok(data);
 }
 
-pub async fn login_user(user: LoginUser) -> Result<UserInfo, StatusCode>  {
+pub async fn login_user(user: LoginUser) -> Result<UserInfo, AuthError>  {
     // Send login data to server
     let request_result = get_http_client().post("http://localhost:3001/auth/login").json(&user).send().await;
     if let Err(error) = request_result {
         error!("Error with request: {}", error.to_string());
-        return Err(error.status().unwrap_or(StatusCode::SERVICE_UNAVAILABLE));
+        return Err(AuthError::default());
     }
 
     // Unwrap response from request_result
@@ -180,25 +169,17 @@ pub async fn login_user(user: LoginUser) -> Result<UserInfo, StatusCode>  {
 
     // Check if status is success
     if !status.is_success() {
-        return Err(status);
+        return Err(AuthError::from_response(response).await);
     }
 
     // Extract auth requester token from headers and store in local browser storage
     let headers = response.headers();
-    headers.get_all(AUTHORIZATION).into_iter().for_each(|header| {
-        let header_str_result = header.to_str();
-        if let Err(error) = &header_str_result {
-            error!("Error converting header to str: {}", error.to_string());
-        }
-        let header_str = header_str_result.unwrap();
-        AuthStorage::new(&header_str).store_requester_token();
-    });
+    AuthStorage::store_from_headers(headers);
 
     // Extract user info from json body
     let json_result = response.json::<UserInfo>().await;
-    if let Err(error) = json_result {
-        error!("Error parsing body: {}", error.to_string());
-        return Err(status)
+    if let Err(_) = json_result {
+        return Err(AuthError::default());
     }
 
     // Unwrap JSON result and return as OK result

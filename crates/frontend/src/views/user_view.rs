@@ -1,13 +1,13 @@
 use yew::prelude::*;
 use yew_hooks::use_async;
 use yewdux::functional::use_store;
-use gloo_console::error;
 
-use crate::{app::UserState, components::{buttons::button::Button, user_info_panel::UserInfoPanel}, services};
+use crate::{app::UserState, components::{buttons::button::Button, error_message::ErrorMessage, user_info_panel::UserInfoPanel}, services::{self, AuthError}};
 
 #[function_component(UserView)]
 pub fn user_view() -> Html {
     let (_user_state, user_dispatch) = use_store::<UserState>();
+    let error_state = use_state(|| None::<AuthError>);
 
     let logout_onclick = {
         Callback::from(move |_| {
@@ -17,6 +17,7 @@ pub fn user_view() -> Html {
     };
 
     let handle_test = {
+        let error_state = error_state.clone();
         use_async(async move {
             let response = services::auth::test_auth_route().await;
             match response {
@@ -24,8 +25,8 @@ pub fn user_view() -> Html {
                     Ok(status_code)
                 },
                 Err(error) => {
-                    error!("No response found: {}", error.to_string());
-                    Err(error)
+                    error_state.set(Some(error));
+                    Err(())
                 }
             }
         })
@@ -40,6 +41,9 @@ pub fn user_view() -> Html {
 
     html! {
         <div class="col-span-12 row-span-24 flex flex-col justify-center items-center h-full space-y-2">
+            if let Some(error) = (*error_state).to_owned() {
+                <ErrorMessage message={error.body().message} />
+            }
             <UserInfoPanel />
             <div class="flex flex-row space-x-4">
                 <Button label={"Logout"} onclick={logout_onclick} />

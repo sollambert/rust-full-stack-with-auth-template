@@ -2,7 +2,7 @@ use axum::{
     extract::{Json, Request}, http::StatusCode, middleware, routing::{delete, get}, RequestExt, Router
 };
 
-use types::user::UserInfo;
+use types::{auth::AuthErrorType, user::UserInfo};
 
 use crate::{middleware::token_authentication, strategies::{authentication::{AuthClaims, AuthError, AuthRequesterClaims, Claims}, users::{delete_user_by_uuid, get_all_users, get_db_user_by_uuid}}};
 
@@ -29,7 +29,7 @@ async fn get_user_info(request: Request) -> Result<(StatusCode, Json<UserInfo>),
     match get_db_user_by_uuid(claims.sub).await {
         Ok(user) => {
             Ok((StatusCode::OK, axum::Json(UserInfo::from_user(user))))
-        }, Err(_) => Err(AuthError::UserDoesNotExist)
+        }, Err(_) => Err(AuthError::from_error_type(AuthErrorType::UserDoesNotExist))
     }
 }
 
@@ -41,10 +41,10 @@ async fn get_all_user_info(request: Request) -> Result<(StatusCode, Json<Vec<Use
         match get_all_users().await {
             Ok(users) => {
                 Ok((StatusCode::OK, axum::Json(users)))
-            }, Err(_) => Err(AuthError::UserDoesNotExist)
+            }, Err(_) => Err(AuthError::from_error_type(AuthErrorType::UserDoesNotExist))
         }
     } else {
-        Err(AuthError::AccessDenied)
+        Err(AuthError::from_error_type(AuthErrorType::AccessDenied))
     }
 }
 
@@ -58,14 +58,14 @@ async fn delete_user(request: Request) -> Result<StatusCode, AuthError> {
                 match delete_user_by_uuid(uuid).await {
                     Ok(_) => {
                         Ok(StatusCode::OK)
-                    }, Err(_) => Err(AuthError::UserDoesNotExist)
+                    }, Err(_) => Err(AuthError::from_error_type(AuthErrorType::UserDoesNotExist))
                 }
             } else {
-                Err(AuthError::AccessDenied)
+                Err(AuthError::from_error_type(AuthErrorType::AccessDenied))
             }
         }, Err(error) => {
             println!("{error}");
-            Err(AuthError::ServerError)
+            Err(AuthError::from_error_type(AuthErrorType::ServerError))
         }
     }
 }
