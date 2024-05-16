@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use crate::components::buttons::externalbutton::ExternalButton;
+use crate::components::buttons::external_button::ExternalButton;
 
 #[function_component(Footer)]
 pub fn footer() -> Html {

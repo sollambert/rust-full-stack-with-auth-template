@@ -1,3 +1,3 @@
 pub mod button;
-pub mod navbutton;
-pub mod externalbutton;
+pub mod nav_button;
+pub mod external_button;
