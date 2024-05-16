@@ -1,18 +1,20 @@
+use types::user::UserInfo;
 use yew::prelude::*;
 use yew_hooks::use_async;
 use yewdux::functional::use_store;
 
-use crate::{app::UserState, components::{buttons::button::Button, error_message::ErrorMessage, user_info_panel::UserInfoPanel}, services::{self, AuthError}};
+use crate::{components::{buttons::button::Button, error_message::ErrorMessage, user_info_panel::UserInfoPanel}, services::{self, AuthError}};
+use crate::hooks::StoredUserInfo;
 
 #[function_component(UserView)]
 pub fn user_view() -> Html {
-    let (_user_state, user_dispatch) = use_store::<UserState>();
+    let (_user_info, user_info_dispatch) = use_store::<StoredUserInfo>();
     let error_state = use_state(|| None::<AuthError>);
 
     let logout_onclick = {
         Callback::from(move |_| {
             services::auth::logout_user();
-            user_dispatch.set(UserState::default());
+            user_info_dispatch.set(StoredUserInfo { user_info: UserInfo::default() });
         })
     };
 

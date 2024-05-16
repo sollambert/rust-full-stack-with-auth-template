@@ -6,11 +6,11 @@ use gloo_console::error;
 use yew_router::history::{History, HashHistory};
 use yewdux::prelude::*;
 
-use crate::{app::UserState, components::{buttons::button::Button, error_message::ErrorMessage, input::Input}, services::{self, AuthError}};
+use crate::{components::{buttons::button::Button, error_message::ErrorMessage, input::Input}, hooks::StoredUserInfo, services::{self, AuthError}};
 
 #[function_component(RegisterForm)]
 pub fn register_form() -> Html {
-    let (_user_state, user_dispatch) = use_store::<UserState>();
+    let (_user_state, user_dispatch) = use_store::<StoredUserInfo>();
     let error_state = use_state(|| None::<AuthError>);
     let register_user = use_state(RegisterUser::default);
 
@@ -38,7 +38,7 @@ pub fn register_form() -> Html {
             let response = services::auth::register_user((*register_user).clone()).await;
             match response {
                 Ok(user_info) => {
-                    user_dispatch.set(UserState {user_info: user_info.clone()});
+                    user_dispatch.set(StoredUserInfo {user_info: user_info.clone()});
                     register_user.set(RegisterUser::default());
                     HashHistory::new().push("/login");
                     Ok(user_info)

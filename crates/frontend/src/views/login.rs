@@ -1,18 +1,18 @@
 use yew::prelude::*;
-use yewdux::functional::use_store;
 use yew_router::history::History;
 use yew_router::history::HashHistory;
 use yew_router::prelude::*;
 
-use crate::app::{UserState, AppRoute};
+use crate::app::AppRoute;
 use crate::components::auth::login_form::LoginForm;
+use crate::hooks::use_user_info;
 
 #[function_component(Login)]
 pub fn login() -> Html {
-    let (user_state, _user_dispatch) = use_store::<UserState>();
+    let user_info = use_user_info();
 
     use_effect(move || {
-        if user_state.user_info.uuid != String::new() {
+        if user_info.uuid != String::new() {
             HashHistory::new().push("/")
         }
     });

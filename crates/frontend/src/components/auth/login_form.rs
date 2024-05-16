@@ -10,12 +10,13 @@ use yew_router::history::HashHistory;
 use yewdux::prelude::*;
 
 use crate::components::error_message::ErrorMessage;
+use crate::hooks::StoredUserInfo;
 use crate::services::AuthError;
-use crate::{services, app::UserState, components::{buttons::button::Button, input::Input}};
+use crate::{services, components::{buttons::button::Button, input::Input}};
 
 #[function_component(LoginForm)]
 pub fn login_form() -> Html {
-    let (_user_state, user_dispatch) = use_store::<UserState>();
+    let (_user_state, user_dispatch) = use_store::<StoredUserInfo>();
     let login_user = use_state(LoginUser::default);
     let error_state = use_state(|| None::<AuthError>);
 
@@ -43,7 +44,7 @@ pub fn login_form() -> Html {
             let response = services::auth::login_user((*login_user).clone()).await;
             match response {
                 Ok(user_info) => {
-                    user_dispatch.set(UserState {user_info: user_info.clone()});
+                    user_dispatch.set(StoredUserInfo {user_info: user_info.clone()});
                     login_user.set(LoginUser::default());
                     HashHistory::new().push("/");
                     Ok(user_info)

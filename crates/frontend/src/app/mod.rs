@@ -1,15 +1,8 @@
 use yew::prelude::*;
-use yewdux::prelude::*;
 use yew_router::prelude::*;
-use types::user::UserInfo;
 
-use crate::{components::{auth::{admin_route::AdminRoute, protected_route::ProtectedRoute}, footer::Footer, header::Header}, services, views::{admin_view::AdminView, chat::Chat, home::Home, login::Login, not_found::NotFound, register::Register, user_view::UserView}};
-
-
-#[derive(Default, PartialEq, Store)]
-pub struct UserState {
-    pub user_info: UserInfo
-}
+use crate::{components::{auth::{admin_route::AdminRoute, protected_route::ProtectedRoute}, footer::Footer, header::Header}, views::{admin_view::AdminView, chat::Chat, home::Home, login::Login, not_found::NotFound, register::Register, user_view::UserView}};
+use crate::hooks::use_user_info;
 
 /// App routes
 #[derive(Routable, Debug, Clone, PartialEq, Eq)]
@@ -45,16 +38,7 @@ pub fn switch(route: AppRoute) -> Html {
 
 #[function_component(App)]
 pub fn app() -> Html {
-    let (user_state, user_dispatch) = use_store::<UserState>();
-
-    use_effect(move || {
-        if user_state.user_info.uuid == String::new() {
-            yew::platform::spawn_local(async move {
-                let user_info = services::user::get_user_info().await;
-                user_dispatch.set(UserState {user_info});
-            });
-        }
-    });
+    let _user_info = use_user_info();
 
     html! {
         <HashRouter>

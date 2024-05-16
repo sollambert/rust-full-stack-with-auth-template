@@ -1,11 +1,11 @@
 use yew::prelude::*;
-use yewdux::functional::use_store;
 
-use crate::app::UserState;
+use crate::hooks::use_user_info;
 
 #[function_component(UserInfoPanel)]
 pub fn user_info_panel() -> Html {
-    let (user_state, _user_dispatch) = use_store::<UserState>();
+
+    let user_info = use_user_info();
 
     html! {
         <div class="flex flex-col justify-center w-fit h-min
@@ -16,16 +16,16 @@ pub fn user_info_panel() -> Html {
         bg-slate-100 text-slate-800 shadow-md
         dark:bg-slate-900 dark:text-slate-100">
             <p>
-                {format!("UUID: {}", user_state.user_info.uuid.clone())}
+                {format!("UUID: {}", user_info.uuid.clone())}
             </p>
             <p>
-                {format!("Username: {}", user_state.user_info.username.clone())}
+                {format!("Username: {}", user_info.username.clone())}
             </p>
             <p>
-                {format!("Email: {}", user_state.user_info.email.clone())}
+                {format!("Email: {}", user_info.email.clone())}
             </p>
             <p>
-                {format!("Is Admin: {}", user_state.user_info.is_admin.clone())}
+                {format!("Is Admin: {}", user_info.is_admin.clone())}
             </p>
         </div>
     }
