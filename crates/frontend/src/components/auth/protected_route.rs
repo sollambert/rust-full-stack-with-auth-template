@@ -1,8 +1,7 @@
 use yew::{html::ChildrenRenderer, prelude::*, virtual_dom::VNode};
 use yew_router::history::{History, HashHistory};
-use yewdux::functional::use_store;
 
-use crate::{app::UserState, services};
+use crate::hooks::use_user_info;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -12,17 +11,11 @@ pub struct Props {
 #[function_component(ProtectedRoute)]
 pub fn protected_route(props: &Props) -> Html {
 
-    let (user_state, user_dispatch) = use_store::<UserState>();
+    let user_info = use_user_info();
 
     use_effect(move || {
-        if user_state.user_info.uuid == String::new() {
-            yew::platform::spawn_local(async move {
-                let user_info = services::user::get_user_info().await;
-                if user_info.uuid == String::new() {
-                    HashHistory::new().push("/login");
-                }
-                user_dispatch.set(UserState {user_info});
-            });
+        if user_info.uuid == String::new() {
+            HashHistory::new().push("/login");
         }
     });
 
