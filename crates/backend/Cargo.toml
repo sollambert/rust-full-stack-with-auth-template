@@ -12,3 +12,4 @@ tokio = { version = "1.0", features = ["full"] }
 serde = "1"
 
 types = { path = "../types" }
+email_address = "0.2.4"
