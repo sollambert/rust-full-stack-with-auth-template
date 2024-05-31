@@ -1,5 +1,6 @@
 use std::fmt;
 
+use email_address::EmailAddress;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "sqlx")]
@@ -11,7 +12,7 @@ pub struct User {
     pub uuid: String,
     pub username: String,
     pub pass: String,
-    pub email: String,
+    pub email: EmailAddress,
     pub is_admin: bool
 }
 
@@ -22,7 +23,15 @@ impl <'r> FromRow<'r, AnyRow> for User {
         let uuid: String = row.try_get("uuid")?;
         let username: String = row.try_get("username")?;
         let pass: String = row.try_get("pass")?;
-        let email: String = row.try_get("email")?;
+        let email: EmailAddress = match row.try_get::<String, &str>("email") {
+            Ok(email_str) => {
+                EmailAddress::new_unchecked(email_str)
+            },
+            Err(e) => {
+                println!("{}", e);
+                EmailAddress::new_unchecked("")
+            }
+        };
         let is_admin: bool = row.try_get("is_admin")?;
 
         Ok(Self {
@@ -101,7 +110,7 @@ impl UserInfo {
         Self {
             uuid: user.uuid,
             username: user.username,
-            email: user.email,
+            email: user.email.to_string(),
             is_admin: user.is_admin
         }
     }

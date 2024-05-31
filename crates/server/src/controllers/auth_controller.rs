@@ -2,6 +2,7 @@ use axum::{
     extract::Request, http::StatusCode, middleware, routing::{get, post}, Json, Router
 };
 use bcrypt::verify;
+use email_address::EmailAddress;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
 use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, UserInfo}};
 
@@ -101,6 +102,10 @@ async fn register_user(
 ) -> Result<(StatusCode, HeaderMap, Json<UserInfo>), AuthError> {
     if payload.username.is_empty() || payload.pass.is_empty() || payload.email.is_empty() {
         return Err(AuthError::from_error_type(AuthErrorType::MissingFields));
+    }
+    // validate email address before inserting
+    if !EmailAddress::is_valid(&payload.email) {
+        return Err(AuthError::from_error_type(AuthErrorType::InvalidEmail));
     }
     // insert user into table
     let db_result = users::insert_db_user(payload).await;

@@ -60,7 +60,8 @@ impl AuthError {
             AuthErrorType::InvalidToken => (StatusCode::FORBIDDEN, String::from("Invalid token")),
             AuthErrorType::AccessDenied => (StatusCode::FORBIDDEN, String::from("Access denied")),
             AuthErrorType::MissingFields => (StatusCode::BAD_REQUEST, String::from("Missing required fields")),
-            AuthErrorType::BadRequest => (StatusCode::BAD_REQUEST, String::from("Bad request"))
+            AuthErrorType::BadRequest => (StatusCode::BAD_REQUEST, String::from("Bad request")),
+            AuthErrorType::InvalidEmail => (StatusCode::BAD_REQUEST, String::from("Email address is invalid"))
         };
         Self {
             status,
@@ -88,7 +89,8 @@ pub enum AuthErrorType {
     BadRequest,
     ServerError,
     AccessDenied,
-    MissingFields
+    MissingFields,
+    InvalidEmail
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
