@@ -44,7 +44,7 @@ pub fn app() -> Html {
         <HashRouter>
             <body class="flex flex-col space-between w-screen h-screen bg-slate-50 dark:bg-slate-700 overflow-hidden">
                 <Header />
-                <main class="grid grid-rows-24 grid-cols-12 auto-rows-auto h-full w-full py-8">
+                <main class="grid grid-rows-24 grid-cols-12 auto-rows-auto h-full w-full py-12">
                     <Switch<AppRoute> render={switch} />
                 </main>
                 <Footer />
