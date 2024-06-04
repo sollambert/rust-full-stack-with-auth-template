@@ -90,6 +90,11 @@ impl LoginUser {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ResetUser {
+    pub email_address: EmailAddress
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 #[cfg_attr(feature = "sqlx", derive(sqlx::FromRow))]
 pub struct UserInfo {
