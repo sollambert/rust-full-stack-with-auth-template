@@ -27,6 +27,8 @@ struct_iterable = "0.1.1"
 base64 = "0.22.0"
 email_address = "0.2.4"
 futures = "0.3.30"
+lettre = "0.11.7"
+rand = "0.8.5"
 
 [features]
 sqlite = []
