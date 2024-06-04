@@ -7,7 +7,7 @@ use bcrypt::verify;
 use email_address::EmailAddress;
 use futures::lock::Mutex;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
-use lettre::{message::header::ContentType, transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
+use lettre::{message::header::ContentType, transport::smtp::{authentication::Credentials, client::{Tls, TlsParameters}}, Message, SmtpTransport, Transport};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, ResetUser, UserInfo}};
@@ -207,9 +207,11 @@ async fn request_reset(
         return Err(AuthError::from_error_type(AuthErrorType::ServerError))
     }
     let smtp_host = smtp_host.unwrap();
+    println!("{smtp_host} {smtp_username} {smtp_password}");
     let creds = Credentials::new(smtp_username, smtp_password);
     let mailer = SmtpTransport::relay(&smtp_host)
         .unwrap()
+        .tls(Tls::None)
         .credentials(creds)
         .build();
     match mailer.send(&email) {
@@ -225,7 +227,7 @@ async fn request_reset(
 fn gen_reset_key() -> String {
     rand::thread_rng()
     .sample_iter(&Alphanumeric)
-    .take(8)
+    .take(64)
     .map(char::from)
     .collect()
 }
