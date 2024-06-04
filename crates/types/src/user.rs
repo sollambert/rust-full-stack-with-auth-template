@@ -92,7 +92,8 @@ impl LoginUser {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ResetUser {
-    pub email_address: EmailAddress
+    pub email_address: EmailAddress,
+    pub pass: String
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
