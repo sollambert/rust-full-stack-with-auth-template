@@ -1,15 +1,31 @@
+use std::{env, collections::HashMap, sync::Arc, time::SystemTime};
+
 use axum::{
-    extract::Request, http::StatusCode, middleware, routing::{get, post}, Json, Router
+    extract::{Request, State}, http::StatusCode, middleware, routing::{get, post}, Json, Router
 };
 use bcrypt::verify;
 use email_address::EmailAddress;
+use futures::lock::Mutex;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
+use lettre::{message::header::ContentType, Message};
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, UserInfo}};
 
 use crate::{middleware::token_authentication, strategies::{authentication::{AuthClaims, AuthError, AuthRequesterClaims, Claims}, users}};
 
+struct TimeStampedEmail {
+    time_stamp: SystemTime,
+    email: EmailAddress
+}
+struct ResetKeysState {
+    keys: Mutex<HashMap<String, TimeStampedEmail>>
+}
+
 // route function to nest endpoints in router
 pub fn routes() -> Router {
+    let keys = Mutex::new(HashMap::<String, TimeStampedEmail>::new());
+    let key_state = Arc::new(ResetKeysState{keys});
     // create routes
     Router::new()
         // create nested router for routes requiring AuthClaims
@@ -23,6 +39,8 @@ pub fn routes() -> Router {
         // routes that do not need middleware
         .route("/login", post(login_user))
         .route("/register", post(register_user))
+        .route("/reset", post(request_reset))
+        .with_state(key_state)
 }
 
 async fn test_auth_route(request: Request) -> Result<(StatusCode, String), AuthError> {
@@ -136,4 +154,28 @@ async fn register_user(
     header_map.insert(AUTHORIZATION, HeaderValue::from_str(&auth_token.to_string()).unwrap());
     // respond to request with UserInfo in body
     Ok((StatusCode::CREATED, header_map.clone(), axum::Json(user_info)))
+}
+
+async fn request_reset(
+    State(state): State<Arc<ResetKeysState>>,
+    Json(email): Json<EmailAddress>
+) -> Result<StatusCode, AuthError> {
+    if let Err(_) = users::get_db_user_by_username_or_email(email.to_string()).await {
+        return Err(AuthError::from_error_type(AuthErrorType::UserDoesNotExist));
+    }
+    let reset_key = gen_reset_key();
+    let mut keys = state.keys.lock().await;
+    let company_name =  env::var("COMPANY_NAME").unwrap();
+    let company_domain =  env::var("COMPANY_DOMAIN").unwrap();
+    keys.insert(reset_key, TimeStampedEmail{email: email.clone(), time_stamp: SystemTime::now()});
+    
+    Ok(StatusCode::CREATED)
+}
+
+fn gen_reset_key() -> String {
+    rand::thread_rng()
+    .sample_iter(&Alphanumeric)
+    .take(8)
+    .map(char::from)
+    .collect()
 }
