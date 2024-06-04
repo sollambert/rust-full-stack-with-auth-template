@@ -1,4 +1,4 @@
-use std::{env, collections::HashMap, sync::Arc, time::SystemTime};
+use std::{collections::HashMap, env, fs, sync::Arc, time::SystemTime};
 
 use axum::{
     extract::{Request, State}, http::StatusCode, middleware, routing::{get, post}, Json, Router
@@ -7,10 +7,10 @@ use bcrypt::verify;
 use email_address::EmailAddress;
 use futures::lock::Mutex;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
-use lettre::{message::header::ContentType, Message};
+use lettre::{message::header::ContentType, transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
-use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, UserInfo}};
+use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, ResetUser, UserInfo}};
 
 use crate::{middleware::token_authentication, strategies::{authentication::{AuthClaims, AuthError, AuthRequesterClaims, Claims}, users}};
 
@@ -158,17 +158,67 @@ async fn register_user(
 
 async fn request_reset(
     State(state): State<Arc<ResetKeysState>>,
-    Json(email): Json<EmailAddress>
+    Json(reset_user): Json<ResetUser>
 ) -> Result<StatusCode, AuthError> {
-    if let Err(_) = users::get_db_user_by_username_or_email(email.to_string()).await {
+    let email_address = reset_user.email_address;
+    if let Err(_) = users::get_db_user_by_username_or_email(email_address.to_string()).await {
         return Err(AuthError::from_error_type(AuthErrorType::UserDoesNotExist));
     }
     let reset_key = gen_reset_key();
     let mut keys = state.keys.lock().await;
     let company_name =  env::var("COMPANY_NAME").unwrap();
     let company_domain =  env::var("COMPANY_DOMAIN").unwrap();
-    keys.insert(reset_key, TimeStampedEmail{email: email.clone(), time_stamp: SystemTime::now()});
-    
+    keys.insert(reset_key.clone(), TimeStampedEmail{email: email_address.clone(), time_stamp: SystemTime::now()});
+    drop(keys);
+    let html = fs::read_to_string("crates/server/resources/reset_template.html");
+    if let Err(_) = html {
+        println!("Could not read password reset template!");
+        return Err(AuthError::from_error_type(AuthErrorType::ServerError))
+    }
+    let html = html.unwrap()
+        .replace("{COMPANY_NAME}", &company_name)
+        .replace("{RESET_PASSWORD_URL}", &format!("{}/reset/{}", company_domain, reset_key));
+    let email = Message::builder()
+        .from(format!("{} <noreply@{}>", company_name, company_domain).parse().unwrap())
+        .to(email_address.to_string().parse().unwrap())
+        .subject(format!("Password Reset Requested for {}", company_name))
+        .header(ContentType::TEXT_HTML)
+        .body(html);
+    if let Err(_) = email {
+        println!("Could not parse email!");
+        return Err(AuthError::from_error_type(AuthErrorType::ServerError))
+    }
+    let email = email.unwrap();
+    let smtp_username = env::var("SMTP_USERNAME").to_owned();
+    if let Err(_) = smtp_username {
+        println!("SMTP_USERNAME environment variable not configured!");
+        return Err(AuthError::from_error_type(AuthErrorType::ServerError))
+    }
+    let smtp_username = smtp_username.unwrap();
+    let smtp_password = env::var("SMTP_PASSWORD").to_owned();
+    if let Err(_) = smtp_password {
+        println!("SMTP_PASSWORD environment variable not configured!");
+        return Err(AuthError::from_error_type(AuthErrorType::ServerError))
+    }
+    let smtp_password = smtp_password.unwrap();
+    let smtp_host = env::var("SMTP_HOST").to_owned();
+    if let Err(_) = smtp_host {
+        println!("SMTP_HOST environment variable not configured!");
+        return Err(AuthError::from_error_type(AuthErrorType::ServerError))
+    }
+    let smtp_host = smtp_host.unwrap();
+    let creds = Credentials::new(smtp_username, smtp_password);
+    let mailer = SmtpTransport::relay(&smtp_host)
+        .unwrap()
+        .credentials(creds)
+        .build();
+    match mailer.send(&email) {
+        Ok(_) => println!("Email sent successfully to {email_address}"),
+        Err(e) => {
+            println!("Failed to send email to {email_address}: {e:?}");
+            return Err(AuthError::from_error_type(AuthErrorType::ServerError))
+        }
+    }
     Ok(StatusCode::CREATED)
 }
 
