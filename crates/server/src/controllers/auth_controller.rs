@@ -213,7 +213,6 @@ async fn request_reset(
         return Err(AuthError::from_error_type(AuthErrorType::ServerError))
     }
     let smtp_host = smtp_host.unwrap();
-    println!("{smtp_host} {smtp_username} {smtp_password}");
     let creds = Credentials::new(smtp_username, smtp_password);
     let mailer = SmtpTransport::relay(&smtp_host)
         .unwrap()
@@ -221,7 +220,7 @@ async fn request_reset(
         .credentials(creds)
         .build();
     match mailer.send(&email) {
-        Ok(_) => println!("Email sent successfully to {email_address}"),
+        Ok(_) => println!("Reset email sent successfully to {email_address}"),
         Err(e) => {
             println!("Failed to send email to {email_address}: {e:?}");
             return Err(AuthError::from_error_type(AuthErrorType::ServerError))
