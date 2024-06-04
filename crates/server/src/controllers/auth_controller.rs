@@ -1,13 +1,13 @@
-use std::{collections::HashMap, env, fs, sync::Arc, time::SystemTime};
+use std::{collections::HashMap, env, fs, str::FromStr, sync::Arc, time::{Duration, SystemTime}};
 
 use axum::{
-    extract::{Request, State}, http::StatusCode, middleware, routing::{get, post}, Json, Router
+    extract::{Path, Request, State}, http::StatusCode, middleware, routing::{get, post}, Json, Router
 };
 use bcrypt::verify;
 use email_address::EmailAddress;
 use futures::lock::Mutex;
 use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
-use lettre::{message::header::ContentType, transport::smtp::{authentication::Credentials, client::{Tls, TlsParameters}}, Message, SmtpTransport, Transport};
+use lettre::{message::header::ContentType, transport::smtp::{authentication::Credentials, client::Tls}, Message, SmtpTransport, Transport};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, ResetUser, UserInfo}};
@@ -39,8 +39,10 @@ pub fn routes() -> Router {
         // routes that do not need middleware
         .route("/login", post(login_user))
         .route("/register", post(register_user))
-        .route("/reset", post(request_reset))
-        .with_state(key_state)
+        .nest("/reset", Router::new()
+            .route("/", post(request_reset))
+            .route("/:reset_key", post(reset_password))
+            .with_state(key_state))
 }
 
 async fn test_auth_route(request: Request) -> Result<(StatusCode, String), AuthError> {
@@ -158,9 +160,13 @@ async fn register_user(
 
 async fn request_reset(
     State(state): State<Arc<ResetKeysState>>,
-    Json(reset_user): Json<ResetUser>
+    email_address: String
 ) -> Result<StatusCode, AuthError> {
-    let email_address = reset_user.email_address;
+    let email_address = EmailAddress::from_str(&email_address);
+    if let Err(_) = email_address {
+        return Err(AuthError::from_error_type(AuthErrorType::InvalidEmail));
+    }
+    let email_address = email_address.unwrap();
     if let Err(_) = users::get_db_user_by_username_or_email(email_address.to_string()).await {
         return Err(AuthError::from_error_type(AuthErrorType::UserDoesNotExist));
     }
@@ -168,7 +174,7 @@ async fn request_reset(
     let mut keys = state.keys.lock().await;
     let company_name =  env::var("COMPANY_NAME").unwrap();
     let company_domain =  env::var("COMPANY_DOMAIN").unwrap();
-    keys.insert(reset_key.clone(), TimeStampedEmail{email: email_address.clone(), time_stamp: SystemTime::now()});
+    keys.insert(reset_key.clone(), TimeStampedEmail{email: email_address.to_owned(), time_stamp: SystemTime::now()});
     drop(keys);
     let html = fs::read_to_string("crates/server/resources/reset_template.html");
     if let Err(_) = html {
@@ -230,4 +236,35 @@ fn gen_reset_key() -> String {
     .take(64)
     .map(char::from)
     .collect()
+}
+
+async fn reset_password(
+    State(key_state):  State<Arc<ResetKeysState>>,
+    Path(reset_key): Path<String>,
+    Json(reset_user): Json<ResetUser>
+) -> Result<StatusCode, AuthError> {
+    let db_result = users::get_db_user_by_username_or_email(reset_user.email_address.to_string()).await;
+    if let Err(_) = db_result {
+        return Err(AuthError::from_error_type(AuthErrorType::UserDoesNotExist));
+    }
+    let mut user = db_result.unwrap();
+    let mut keys = key_state.keys.lock().await;
+    let key = keys.get(&reset_key);
+    if let None = key {
+        return Err(AuthError::from_error_type(AuthErrorType::ResetLinkInvalid));
+    }
+    let timestamped_email = key.unwrap();
+    let expiration_time = 3600;
+    if SystemTime::now().duration_since(timestamped_email.time_stamp).unwrap() > Duration::from_secs(expiration_time) {
+        return Err(AuthError::from_error_type(AuthErrorType::ResetLinkInvalid));
+    }
+    user.pass = reset_user.pass;
+    let db_result = users::update_db_user(user).await;
+    if let Err(e) = db_result {
+        println!("{e}");
+        return Err(AuthError::from_error_type(AuthErrorType::ServerError))
+    }
+    keys.remove(&reset_key);
+    drop(keys);
+    Ok(StatusCode::ACCEPTED)
 }
