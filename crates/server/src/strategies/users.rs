@@ -56,3 +56,28 @@ pub async fn insert_db_user(register_user: RegisterUser) -> Result<User, sqlx::E
         .bind(false)
         .fetch_one(&pool::get_pool()).await
 }
+
+pub async fn update_db_user(user: User) -> Result<AnyRow, sqlx::Error> {
+    // initialize salt str slice
+    let mut salt: [u8; 16] = [0;16];
+    // load 16 bytes from PASSWORD_SALT env variable to salt str slice
+    salt.copy_from_slice(&env::var("PASSWORD_SALT").unwrap().as_bytes()[0..16]);
+    // perform query to insert new user with hashed password and bind all payload object fields
+    sqlx::query(
+        "UPDATE \"users\"
+        SET uuid = $2, username = $3, pass = $4, email = $5, is_admin = $6
+        WHERE id = $1
+        RETURNING *;")
+        .bind(user.id)
+        .bind(user.uuid)
+        .bind(user.username)
+        // hash password with salt
+        .bind(hash_with_salt(
+            user.pass,
+            DEFAULT_COST,
+            salt
+        ).unwrap().to_string())
+        .bind(user.email.to_string())
+        .bind(user.is_admin)
+        .fetch_one(&pool::get_pool()).await
+}
