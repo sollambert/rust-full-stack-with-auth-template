@@ -190,7 +190,7 @@ async fn request_reset(
     // replace placeholder text in html with proper information
     let html = html.unwrap()
         .replace("{COMPANY_NAME}", &company_name)
-        .replace("{RESET_PASSWORD_URL}", &format!("{}/reset/{}", company_domain, reset_key));
+        .replace("{RESET_PASSWORD_URL}", &format!("{company_domain}/reset?key={reset_key}&email={email_address}"));
     // build email
     let email = Message::builder()
         .from(format!("{} <noreply@{}>", company_name, company_domain).parse().unwrap())
