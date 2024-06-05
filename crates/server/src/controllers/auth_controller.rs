@@ -253,6 +253,9 @@ async fn reset_password(
         return Err(AuthError::from_error_type(AuthErrorType::ResetLinkInvalid));
     }
     let timestamped_email = key.unwrap();
+    if timestamped_email.email != reset_user.email_address {
+        return Err(AuthError::from_error_type(AuthErrorType::ResetLinkInvalid));
+    }
     let expiration_time = 3600;
     if SystemTime::now().duration_since(timestamped_email.time_stamp).unwrap() > Duration::from_secs(expiration_time) {
         return Err(AuthError::from_error_type(AuthErrorType::ResetLinkInvalid));
