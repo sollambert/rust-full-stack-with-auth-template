@@ -45,18 +45,18 @@ pub fn register_form() -> Html {
         })
     };
 
-    let handle_register = {
+    let handle_reset = {
         let reset_user = reset_user.clone();
         let error_state = error_state.clone();
         use_async(async move {
             let response = services::auth::reset_user((*reset_user).clone(), query_params.key).await;
             match response {
-                Ok(user_info) => {
+                Ok(status) => {
                     user_dispatch.set(StoredUserInfo {user_info: UserInfo::default()});
                     reset_user.set(initial_user);
                     AuthStorage::clear();
                     HashHistory::new().push("/login");
-                    Ok(user_info)
+                    Ok(status)
                 },
                 Err(error) => {
                     error_state.set(Some(error.to_owned()));
@@ -66,28 +66,28 @@ pub fn register_form() -> Html {
         })
     };
 
-    let register_onclick = {
-        let handle_register = handle_register.clone();
+    let reset_onclick = {
+        let handle_reset = handle_reset.clone();
         Callback::from(move |_| {
-            handle_register.run();
+            handle_reset.run();
         })
     };
 
-    let register_onsubmit = {
-        let handle_register = handle_register.clone();
+    let reset_onsubmit = {
+        let handle_reset = handle_reset.clone();
         Callback::from(move |ev: SubmitEvent| {
             ev.prevent_default();
-            handle_register.run();
+            handle_reset.run();
         })
     };
 
     html! {
-        <form class="flex flex-col w-64 space-y-2" onsubmit={register_onsubmit}>
+        <form class="flex flex-col w-64 space-y-2" onsubmit={reset_onsubmit}>
             if let Some(error) = (*error_state).to_owned() {
                 <ErrorMessage message={error.body().message} />
             }
             <Input input_type="password" placeholder="Password" oninput={oninput("pass", &error_state)} value={reset_user.pass.to_owned()} />
-            <Button onclick={register_onclick} label="Register" />
+            <Button onclick={reset_onclick} label="Confirm" />
         </form>
     }
 }
