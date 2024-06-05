@@ -3,6 +3,7 @@ pub mod chat;
 pub mod register;
 pub mod login;
 pub mod reset;
+pub mod request_reset;
 pub mod not_found;
 pub mod admin_view;
 pub mod user_view;

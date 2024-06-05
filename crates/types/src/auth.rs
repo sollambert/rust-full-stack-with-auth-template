@@ -63,6 +63,7 @@ impl AuthError {
             AuthErrorType::BadRequest => (StatusCode::BAD_REQUEST, String::from("Bad request")),
             AuthErrorType::InvalidEmail => (StatusCode::BAD_REQUEST, String::from("Email address is invalid")),
             AuthErrorType::ResetLinkInvalid => (StatusCode::BAD_REQUEST, String::from("Reset link is invalid")),
+            AuthErrorType::PasswordDoesNotMatch => (StatusCode::BAD_REQUEST, String::from("Password does not match")),
         };
         Self {
             status,
@@ -92,7 +93,8 @@ pub enum AuthErrorType {
     AccessDenied,
     MissingFields,
     InvalidEmail,
-    ResetLinkInvalid
+    ResetLinkInvalid,
+    PasswordDoesNotMatch
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

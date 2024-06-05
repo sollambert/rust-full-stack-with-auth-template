@@ -203,7 +203,28 @@ pub async fn reset_user(user: ResetUser, key: String) -> Result<StatusCode, Auth
         return Err(AuthError::from_response(response).await);
     }
 
-    // Extract auth requester token from headers and store in local browser storage
+    // Clear auth storage
+    AuthStorage::clear();
+    return Ok(status);
+}
+
+pub async fn request_reset(email: String) -> Result<StatusCode, AuthError> {
+    let request_result = get_http_client().post(format!("http://localhost:3001/auth/reset")).body(email).send().await;
+    if let Err(error) = request_result {
+        error!("Error with request: {}", error.to_string());
+        return Err(AuthError::default());
+    }
+
+    // Unwrap response from request_result
+    let response = request_result.unwrap();
+    let status = response.status();
+
+    // Check if status is success
+    if !status.is_success() {
+        return Err(AuthError::from_response(response).await);
+    }
+
+    // Clear auth storage
     AuthStorage::clear();
     return Ok(status);
 }

@@ -26,6 +26,12 @@ pub fn login() -> Html {
                     {"Need an account?"}
                 </div>
             </Link<AppRoute>>
+            <Link<AppRoute> to={AppRoute::RequestReset}>
+                <div class="cursor-pointer text-blue-600 dark:text-blue-400 underline
+                        focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-3">
+                    {"Forgot password?"}
+                </div>
+            </Link<AppRoute>>
         </div>
     }
 }

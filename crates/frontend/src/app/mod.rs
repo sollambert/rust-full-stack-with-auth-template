@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::{components::{auth::{admin_route::AdminRoute, protected_route::ProtectedRoute}, footer::Footer, header::Header}, views::{admin_view::AdminView, chat::Chat, home::Home, login::Login, not_found::NotFound, register::Register, reset::Reset, user_view::UserView}};
+use crate::{components::{auth::{admin_route::AdminRoute, protected_route::ProtectedRoute}, footer::Footer, header::Header}, views::{admin_view::AdminView, chat::Chat, home::Home, login::Login, not_found::NotFound, register::Register, request_reset::RequestReset, reset::Reset, user_view::UserView}};
 use crate::hooks::use_user_info;
 
 /// App routes
@@ -21,6 +21,8 @@ pub enum AppRoute {
     Register,
     #[at("/reset")]
     Reset,
+    #[at("/reset/request")]
+    RequestReset,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -35,6 +37,7 @@ pub fn switch(route: AppRoute) -> Html {
         AppRoute::Login => html! {<Login />},
         AppRoute::Register => html! {<Register />},
         AppRoute::Reset => html! {<Reset />},
+        AppRoute::RequestReset => html! {<RequestReset />},
         AppRoute::NotFound => html! { <NotFound /> },
     }
 }
