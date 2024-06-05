@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 use email_address::EmailAddress;
 use serde::{Deserialize, Serialize};
@@ -94,6 +94,24 @@ impl LoginUser {
 pub struct ResetUser {
     pub email_address: EmailAddress,
     pub pass: String
+}
+
+impl ResetUser {
+    pub fn new(&self) -> ResetUser {
+        Self {
+            email_address: EmailAddress::new_unchecked(""),
+            pass: String::new()
+        }
+    }
+    pub fn update_field(&self, key: &str, value: String) -> Result<Self,String> {
+        let mut new_self = self.clone();
+        match key {
+            "pass" => new_self.pass = value,
+            "email" => new_self.email_address = EmailAddress::from_str(&value).unwrap(),
+            _ => return Err(format!("Key not found: {}", key))
+        }
+        Ok(new_self)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]

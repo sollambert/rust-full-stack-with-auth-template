@@ -3,7 +3,7 @@ use std::str::FromStr;
 use gloo_console::{error, log};
 
 use reqwest::{header::{HeaderMap, HeaderValue, AUTHORIZATION}, Method, Request, Response, StatusCode, Url};
-use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, UserInfo}};
+use types::{auth::{AuthErrorType, AuthToken}, user::{LoginUser, RegisterUser, ResetUser, UserInfo}};
 use reqwest_middleware::{Middleware, Next};
 use task_local_extensions::Extensions;
 
@@ -185,6 +185,27 @@ pub async fn login_user(user: LoginUser) -> Result<UserInfo, AuthError>  {
     // Unwrap JSON result and return as OK result
     let data = json_result.unwrap();
     return Ok(data);
+}
+
+pub async fn reset_user(user: ResetUser, key: String) -> Result<StatusCode, AuthError> {
+    let request_result = get_http_client().post(format!("http://localhost:3001/auth/reset/{key}")).json(&user).send().await;
+    if let Err(error) = request_result {
+        error!("Error with request: {}", error.to_string());
+        return Err(AuthError::default());
+    }
+
+    // Unwrap response from request_result
+    let response = request_result.unwrap();
+    let status = response.status();
+
+    // Check if status is success
+    if !status.is_success() {
+        return Err(AuthError::from_response(response).await);
+    }
+
+    // Extract auth requester token from headers and store in local browser storage
+    AuthStorage::clear();
+    return Ok(status);
 }
 
 pub fn logout_user() {
