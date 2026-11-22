@@ -1,3 +1,7 @@
 [build]
 target = "index.html"
 dist = "dist"
+
+[tools]
+# tailwind.config.js uses the v3 config format; trunk defaults to v4 otherwise
+tailwindcss = "3.4.17"

@@ -1,4 +1,4 @@
-use tauri_sys::tauri::invoke;
+use tauri_sys::core::{invoke_result, is_tauri};
 use web_sys::{HtmlInputElement, WebSocket};
 use yew::prelude::*;
 use yew_hooks::prelude::*;
@@ -25,10 +25,13 @@ pub fn chat_windows(props: &Props) -> Html {
         // Get backend port automatically from tauri command.
         let port = use_async_with_options(
             async move {
-                match invoke::<_, String>("get_port", &()).await {
-                    Ok(p) => Ok(p),
-                    Err(e) => Err(format!("Error: {:?}", e)),
+                // outside the Tauri webview (plain `trunk serve`) there is no IPC to call
+                if !is_tauri() {
+                    return Err("Not running inside Tauri".to_string());
                 }
+                invoke_result::<String, String>("get_port", &())
+                    .await
+                    .map_err(|e| format!("Error: {:?}", e))
             },
             UseAsyncOptions::enable_auto(),
         );

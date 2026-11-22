@@ -132,7 +132,9 @@ async fn register_user(
     // handle db errors
     if let Err(error) = db_result {
         println!("Error creating user: {}", error);
-        if error.to_string().contains("duplicate key") {
+        // "duplicate key" is the Postgres wording, "UNIQUE constraint failed" the SQLite one
+        let message = error.to_string();
+        if message.contains("duplicate key") || message.contains("UNIQUE constraint failed") {
             return Err(AuthError::from_error_type(AuthErrorType::UserAlreadyExists))
         }
         return Err(AuthError::from_error_type(AuthErrorType::ServerError));
