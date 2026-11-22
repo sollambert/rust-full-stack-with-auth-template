@@ -16,6 +16,19 @@ pub struct User {
     pub is_admin: bool
 }
 
+/// Decode a boolean column through the `Any` driver. Postgres yields a native bool, while
+/// SQLite stores booleans as INTEGER 0/1 (the `Any` driver cannot map SQLite's BOOLEAN type).
+#[cfg(feature = "sqlx")]
+fn try_get_bool(row: &AnyRow, column: &str) -> Result<bool, sqlx::Error> {
+    match row.try_get::<bool, _>(column) {
+        Ok(value) => Ok(value),
+        Err(bool_error) => row
+            .try_get::<i64, _>(column)
+            .map(|value| value != 0)
+            .map_err(|_| bool_error),
+    }
+}
+
 #[cfg(feature = "sqlx")]
 impl <'r> FromRow<'r, AnyRow> for User {
     fn from_row(row: &AnyRow) ->  Result<Self, sqlx::Error> {
@@ -32,7 +45,7 @@ impl <'r> FromRow<'r, AnyRow> for User {
                 EmailAddress::new_unchecked("")
             }
         };
-        let is_admin: bool = row.try_get("is_admin")?;
+        let is_admin: bool = try_get_bool(row, "is_admin")?;
 
         Ok(Self {
             id, uuid, username, pass, email, is_admin
@@ -115,12 +128,23 @@ impl ResetUser {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
-#[cfg_attr(feature = "sqlx", derive(sqlx::FromRow))]
 pub struct UserInfo {
     pub uuid: String,
     pub username: String,
     pub email: String,
     pub is_admin: bool
+}
+
+#[cfg(feature = "sqlx")]
+impl <'r> FromRow<'r, AnyRow> for UserInfo {
+    fn from_row(row: &AnyRow) -> Result<Self, sqlx::Error> {
+        Ok(Self {
+            uuid: row.try_get("uuid")?,
+            username: row.try_get("username")?,
+            email: row.try_get("email")?,
+            is_admin: try_get_bool(row, "is_admin")?,
+        })
+    }
 }
 
 impl fmt::Display for UserInfo {

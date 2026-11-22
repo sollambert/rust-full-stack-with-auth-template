@@ -29,7 +29,7 @@ Install
 ```bash
 rustup target add wasm32-unknown-unknown
 cargo install trunk
-cargo install tauri-cli
+cargo install tauri-cli --version "^2" --locked
 cargo install sqlx-cli
 ```
 
@@ -57,7 +57,7 @@ cd crates/frontend
 trunk serve
 ```
 
-Run migrations
+Run migrations (for SQLite, create the file first with `sqlx database create`)
 ```bash
 # Postgres
 sqlx migrate run --source migrations/postgres
@@ -81,7 +81,8 @@ Required environment variables, these can be stored in a .env file at the top le
 # Base URL for the frontend to communicate with the API, by default TLS is not enabled and will require you to implement
 BASE_URL=http://localhost:3001
 # Database URL, SQLx will infer the database type by URL if not specifying with package feature
-DATABASE_URL=jdbc:postgresql://localhost:5432/
+# Postgres: postgres://user:password@localhost:5432/dbname   SQLite: sqlite://dev.db
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres
 # 16 byte salt
 PASSWORD_SALT=THISISABADSALT!!
 # length in seconds the auth token with access information should live, keep it very short

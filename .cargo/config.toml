@@ -1,0 +1,4 @@
+# sccache cannot pass rustc's long argument list for web-sys on Windows
+# (os error 206), so compile this workspace without a rustc wrapper.
+[build]
+rustc-wrapper = ""
